@@ -1,0 +1,4783 @@
+﻿;Class Array
+
+Procedure.i Array_CountElement(*this.Array)
+	ProcedureReturn *this\number
+EndProcedure
+
+Procedure.i Array_SetElement(*this.Array,number.i,*Element.i)
+	If number>*this\number
+	*this\number=number
+	*this\ptr=ReAllocateMemory(*this\ptr,number *SizeOf(integer))
+	EndIf
+	PokeI(*this\ptr+(number-1)*SizeOf(integer),*Element)
+EndProcedure
+
+Procedure.i Array_AddElement(*this.Array,*Element.i)
+	Array_SetElement(*this,*this\number+1,*Element)
+	ProcedureReturn *this\number
+EndProcedure
+
+Procedure.i Array_FreeElement(*this.Array,number.i)
+	If *this\number=1
+	*this\number=0
+	Else
+	If number<*this\number
+	CopyMemory(*this\ptr+SizeOf(integer)*number,*this\ptr+SizeOf(integer)*(number-1),SizeOf(integer)*(*this\number-number))
+	EndIf
+	*this\number-1
+	*this\ptr=ReAllocateMemory(*this\ptr,*this\number *SizeOf(integer))
+	EndIf
+EndProcedure
+
+Procedure.i Array_GetElement(*this.Array,number.i)
+	If number<=*this\number
+	ProcedureReturn PeekI(*this\ptr+(number-1)*SizeOf(integer))
+	Else
+	ProcedureReturn 0
+	EndIf
+EndProcedure
+
+Procedure.i Array_RemoveAll(*this.Array)
+	*this\number=0
+	*this\ptr=ReAllocateMemory(*this\ptr,1)
+EndProcedure
+
+Procedure.i Array_Free(*this.Array)
+	FreeMemory(*this\ptr)
+	FreeMemory(*this)
+EndProcedure
+
+Procedure.i New_Array()
+	protected *this.Array = AllocateMemory(SizeOf(Array))
+	*this\ptr = AllocateMemory(1)
+	*this\number = 0
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Scintilla
+
+Procedure.i Scintilla_SetIndentationGuides(*this.Scintilla,Type.l)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_SETINDENTATIONGUIDES,Type)
+EndProcedure
+
+Procedure.i Scintilla_GetPosition(*this.Scintilla)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_GETCURRENTPOS)
+EndProcedure
+
+Procedure.i Scintilla_GetLineEndPosition(*this.Scintilla,line.i)
+	ProcedureReturn ScintillaSendMessage(*this\gadget,#SCI_GETLINEENDPOSITION,line)
+EndProcedure
+
+Procedure.i Scintilla_LineFromPosition(*this.Scintilla,Pos.i)
+	ProcedureReturn ScintillaSendMessage(*this\gadget,#SCI_LINEFROMPOSITION,Pos)
+EndProcedure
+
+Procedure.i Scintilla_PositionFromLine(*this.Scintilla,Line.i)
+	ProcedureReturn ScintillaSendMessage(*this\gadget,#SCI_POSITIONFROMLINE,Line)
+EndProcedure
+
+Procedure.i Scintilla_LineLength(*this.Scintilla,line.i)
+	ProcedureReturn ScintillaSendMessage(*this\gadget,#SCI_LINELENGTH,line)
+EndProcedure
+
+Procedure.i Scintilla_GetLineStartPosition(*this.Scintilla,line.i)
+	ProcedureReturn SCI_GetLineEndPosition(*this\Gadget,line)-SCI_LINELENGTH(*this\Gadget,line)
+EndProcedure
+
+Procedure.i Scintilla_GETLINECOUNT(*this.Scintilla)
+	ProcedureReturn ScintillaSendMessage(*this\gadget,#SCI_GETLINECOUNT)
+EndProcedure
+
+Procedure.s Scintilla_GETLINE(*this.Scintilla,line.i)
+Protected size.i
+Protected txt.s
+Protected *text.i
+	size=SCI_LINELENGTH(*this\gadget,line)
+	
+	If size
+	*text=AllocateMemory(size)
+	ScintillaSendMessage(*this\gadget,#SCI_GETLINE,line,*text)
+	If SCI_GETLINECOUNT(*this\Gadget)=line+1
+	txt=PeekS(*text,size,#PB_Ascii)
+	Else
+	txt=PeekS(*text,size-1,#PB_Ascii)
+	EndIf
+	FreeMemory(*text)
+	ProcedureReturn txt
+	Else
+	ProcedureReturn ""
+	EndIf
+EndProcedure
+
+Procedure.i Scintilla_GetCharAt(*this.Scintilla,Position.i)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_GETCHARAT,Position)
+EndProcedure
+
+Procedure.i Scintilla_SetLineIdentation(*this.Scintilla,Ligne.i,Identation.i)
+	ScintillaSendMessage(*this\Gadget,#SCI_SETLINEINDENTATION,Ligne,Identation)
+EndProcedure
+
+Procedure.i Scintilla_GetLineIdentation(*this.Scintilla,Ligne.i)
+	ScintillaSendMessage(*this\Gadget,#SCI_GETLINEINDENTATION,Ligne)
+EndProcedure
+
+Procedure.i Scintilla_GetTabWidth(*this.Scintilla)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_GETTABWIDTH)
+EndProcedure
+
+Procedure.i Scintilla_AddText(*this.Scintilla,txt.s)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_ADDTEXT,Len(txt),@txt)
+EndProcedure
+
+Procedure.i Scintilla_SetLine(*this.Scintilla,Line.i)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_GOTOLINE,Line)
+EndProcedure
+
+Procedure.i Scintilla_SetPosition(*this.Scintilla,Position.i)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_GOTOPOS,Position)
+EndProcedure
+
+Procedure.i Scintilla_GetPositionFromLine(*this.Scintilla,Line.i)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_POSITIONFROMLINE,Line)
+EndProcedure
+
+Procedure.i Scintilla_GetTextWidth(*this.Scintilla,style.i,txt.s)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_TEXTWIDTH,style,@txt)
+EndProcedure
+
+Procedure.i Scintilla_ResizeMargins(*this.Scintilla)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_SETMARGINWIDTHN,0,2+SCI_GetTextWidth(*this\gadget,#STYLE_DEFAULT,Str(SCI_GETLINECOUNT(*this\Gadget))))
+EndProcedure
+
+Procedure.i Scintilla_GetEndStyled(*this.Scintilla)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_GETENDSTYLED)
+EndProcedure
+
+Procedure.i Scintilla_GetFoldLevel(*this.Scintilla,Line.l)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_GETFOLDLEVEL,Line)
+EndProcedure
+
+Procedure.i Scintilla_SetFoldLevel(*this.Scintilla,Line.l,Level.l)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_SETFOLDLEVEL,Line,Level)
+EndProcedure
+
+Procedure.i Scintilla_CanRedo(*this.Scintilla)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_CANREDO)
+EndProcedure
+
+Procedure.i Scintilla_CanUndo(*this.Scintilla)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_CANUNDO)
+EndProcedure
+
+Procedure.i Scintilla_EmptyUndoBuffer(*this.Scintilla)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_EMPTYUNDOBUFFER)
+EndProcedure
+
+Procedure.i Scintilla_Undo(*this.Scintilla)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_UNDO)
+EndProcedure
+
+Procedure.i Scintilla_GoToPoS(*this.Scintilla,pos.l)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_GOTOPOS,pos)
+EndProcedure
+
+Procedure.i Scintilla_Redo(*this.Scintilla)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_REDO)
+EndProcedure
+
+Procedure.i Scintilla_GetLength(*this.Scintilla)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_GETLENGTH)
+EndProcedure
+
+Procedure.i Scintilla_FindString(*this.Scintilla,Text.s,Position.l=0,Flag.i=#Null)
+Protected Find.TextToFind
+	Find\chrg\cpMin=Position
+	Find\chrg\cpMax=SCI_GetLength(*this\Gadget)
+	Find\lpstrText=@Text
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_FINDTEXT,Flag,@Find)
+EndProcedure
+
+Procedure.i Scintilla_SetSel(*this.Scintilla,anchorPos.l,currentPos.l)
+	ProcedureReturn ScintillaSendMessage(*this\Gadget,#SCI_SETSEL,anchorPos,currentPos)
+EndProcedure
+
+Procedure.i New_Scintilla()
+	protected *this.Scintilla = AllocateMemory(SizeOf(Scintilla))
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Option
+
+Procedure.i Option_SetValue(*this.Option,Value.s)
+	*this\Value=Value
+EndProcedure
+
+Procedure.i New_Option(Name.s,Value.s)
+	protected *this.Option = AllocateMemory(SizeOf(Option))
+	*this\Name=Name
+	*this\Value=Value
+	ProcedureReturn *this
+EndProcedure
+;Class Group
+
+Procedure.i Group_CreateOption(*this.Group,Key.s,Value.s)
+Protected *Option.Option
+	*Option=New_Option(Key,Value)
+	Array_AddElement(*this\Option,*Option)
+	ProcedureReturn *Option
+EndProcedure
+
+Procedure.i Group_IsKey(*this.Group,Key.s)
+Protected *Option.Option
+Protected n.i
+	For n=1 To Array_CountElement(*this\Option)
+	*Option=Array_GetElement(*this\Option,n)
+	If *Option\Name=key
+	ProcedureReturn *Option
+	EndIf
+	Next n
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.i New_Group(Name.s)
+	protected *this.Group = AllocateMemory(SizeOf(Group))
+	*this\Option = New_Array()
+	*this\Name=Name
+	ProcedureReturn *this
+EndProcedure
+;Class Preference
+
+Procedure.i Preference_LoadPreference(*this.Preference,file.s)
+Protected *array.Array
+Protected *Group.Group
+	If OpenPreferences(file)
+	If ExaminePreferenceGroups()
+	While NextPreferenceGroup()
+	*Group=New_Group(PreferenceGroupName())
+	PreferenceGroup(*Group\name)
+	ExaminePreferenceKeys()
+	While NextPreferenceKey()
+	Array_AddElement(*Group\Option,New_Option(PreferenceKeyName(),PreferenceKeyValue()))
+	Wend
+	Array_AddElement(*this\Group,*Group)
+	Wend
+	EndIf
+	ClosePreferences()
+	EndIf
+	ProcedureReturn #True
+EndProcedure
+
+Procedure.i Preference_SavePreference(*this.Preference)
+Protected n.l
+Protected i.l
+Protected name.s
+Protected *Option.Option
+Protected *Group.Group
+	name=GetHomeDirectory()+"."+*this\name+"/"
+	CompilerIf #PB_Compiler_OS=#PB_OS_Windows
+	Name=ReplaceString(Name,"/","\")
+	CompilerEndIf
+	If FileSize(name)=-1
+	If Not CreateDirectory(name)
+	ProcedureReturn #False
+	EndIf
+	EndIf
+	If CreatePreferences(name+"prefs.pref")
+	For n=1 To Array_CountElement(*this\Group)
+	*Group=Array_GetElement(*this\Group,n)
+	PreferenceGroup(*Group\Name)
+	For i=1 To Array_CountElement(*Group\Option)
+	*Option=Array_GetElement(*Group\Option,i)
+	WritePreferenceString(*Option\Name,*Option\Value)
+	Next i
+	Next n
+	ClosePreferences()
+	ProcedureReturn #True
+	EndIf
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.i Preference_CreateGroup(*this.Preference,Group.s)
+Protected *Group.Group
+	*Group=New_Group(Group)
+	Array_SetElement(*this\Group,Array_CountElement(*this\Group)+1,*Group)
+	ProcedureReturn *Group
+EndProcedure
+
+Procedure.i Preference_IsGroup(*this.Preference,Group.s)
+Protected *Group.Group
+Protected n.i
+	For n=1 To Array_CountElement(*this\Group)
+	*Group=Array_GetElement(*this\Group,n)
+	If lcase(*Group\Name)=lcase(Group)
+	ProcedureReturn *Group
+	EndIf
+	Next n
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.i Preference_CountGroup(*this.Preference)
+	ProcedureReturn Array_CountElement(*this\Group)
+EndProcedure
+
+Procedure.i Preference_GetGroupNumber(*this.Preference,n.i)
+	ProcedureReturn Array_GetElement(*this\Group,n)
+EndProcedure
+
+Procedure.i Preference_SetPreference(*this.Preference,Group.s,Key.s,Value.s)
+Protected n.i
+Protected *Group.Group
+Protected *Option.Option
+	*Group=Preference_IsGroup(*this,Group)
+	If Not *Group
+	*Group=New_Group(Group)
+	Group_CreateOption(*Group,Key,Value)
+	Array_AddElement(*this\Group,*Group)
+	Else
+	*Option=Group_IsKey(*Group,Key)
+	If Not *Option
+	Group_CreateOption(*Group,Key,Value)
+	Else
+	Option_SetValue(*Option,Value)
+	EndIf
+	EndIf
+EndProcedure
+
+Procedure.b Preference_IsPreference(*this.Preference,Group.s,Key.s)
+Protected *Group.Group
+	*Group=Preference_IsGroup(*this,Group)
+	If *Group
+	If Group_IsKey(*Group,Key)
+	ProcedureReturn #False
+	EndIf
+	EndIf
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.s Preference_GetPreference(*this.Preference,Group.s,Key.s)
+Protected *Group.Group
+Protected *Option.Option
+	*Group=Preference_IsGroup(*this,Group)
+	
+	If *Group
+	*Option=Group_IsKey(*Group,Key)
+	If *Option
+	ProcedureReturn *Option\Value
+	EndIf
+	EndIf
+	ProcedureReturn ""
+EndProcedure
+
+Procedure.i New_Preference(name.s)
+	protected *this.Preference = AllocateMemory(SizeOf(Preference))
+	*this\Group = New_Array()
+	If CheckFilename(name)
+	*this\Name=name
+	name=GetHomeDirectory()+"."+name+"/"
+	If FileSize(name+"prefs.pref")>0
+	Preference_LoadPreference(*this,name+"prefs.pref")
+	EndIf
+	ProcedureReturn *this
+	Else
+	ProcedureReturn 0
+	EndIf
+	ProcedureReturn *this
+EndProcedure
+;Class Panel
+
+Procedure.i New_Panel()
+	protected *this.Panel = AllocateMemory(SizeOf(Panel))
+	
+	ProcedureReturn *this
+EndProcedure
+;Class IHM
+
+Procedure.i IHM_WriteMessage(*this.IHM,Msg.s)
+	Msg="["+FormatDate("%hh:%ii:%ss",Date())+"] "+Msg
+	AddGadgetItem(*this\Gadget[#gd_SecondPanel],-1,Msg)
+EndProcedure
+
+Procedure.i New_IHM()
+	protected *this.IHM = AllocateMemory(SizeOf(IHM))
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Project
+
+Procedure.i Project_PrecompilerIsEnable(*this.Project)
+	ProcedureReturn *this\Options\Precompilation
+EndProcedure
+
+Procedure.i New_Project()
+	protected *this.Project = AllocateMemory(SizeOf(Project))
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Compiler
+
+Procedure.i Compiler_GetStructure(*this.Compiler,Name.s)
+Protected n.i
+Protected *StructureP.Structure
+	Name=LCase(Name)
+	For n=1 To Array_CountElement(*this\Structure)
+	*StructureP=Array_GetElement(*this\Structure,n)
+	If LCase(*StructureP\Name)=Name
+	ProcedureReturn *StructureP
+	EndIf
+	Next n
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.i New_Compiler()
+	protected *this.Compiler = AllocateMemory(SizeOf(Compiler))
+	*this\Constante = New_Array()
+	*this\Structure = New_Array()
+	*this\Function = New_Array()
+	
+	ProcedureReturn *this
+EndProcedure
+;Class LineCode
+
+Procedure.i LineCode_Free(*this.LineCode)
+	FreeMemory(*this)
+EndProcedure
+
+Procedure.i New_LineCode(Text.s,File.s,Line.l)
+	protected *this.LineCode = AllocateMemory(SizeOf(LineCode))
+	*this\Text=Text
+	*this\File=File
+	*this\Line=Line
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler
+
+Procedure.i Precompiler_LoadEnumeration(*this.Precompiler,n.i,*Element.Precompiler_Element)
+Protected *Line.LineCode
+Protected Temp.s
+Protected Value.s
+Protected x.i
+	x=0
+	*Line=Array_GetElement(*this\LocalText,n)
+	If FindString(*Line\Text," ",1)
+	Value=Mid(*Line\Text,FindString(*Line\Text," ",1)+1)
+	EndIf
+	For n=n+1 To Array_CountElement(*this\LocalText)
+	*Line=Array_GetElement(*this\LocalText,n)
+	Select LineIs(*Line\Text)
+	Case #EndEnumeration
+	ProcedureReturn n
+	Case #Constant
+	*Line\Text+"="
+	If Value
+	*Line\Text+Value+"+"+Str(x)
+	Else
+	*Line\Text+Str(x)
+	EndIf
+	Array_AddElement(*this\Constant,New_Precompiler_Constant(*Line,*Element))
+	x+1
+	EndSelect
+	Next n
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.i Precompiler_IsConstant(*this.Precompiler,Name.s)
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.i Precompiler_LoadAttribut(*this.Precompiler,*Line.LineCode,*List.Array,*Body.Array)
+Protected n.i
+Protected Temp.s
+Protected CountP.l
+Protected *Attribut.Precompiler_Attribut
+Protected *NewLine.LineCode
+	*Attribut=New_Precompiler_Attribut()
+	*Attribut\File=*Line\File
+	*Attribut\Line=*Line\Line
+	Array_AddElement(*List,*Attribut)
+	For n=1 To Len(*Line\Text)
+	Select Mid(*Line\Text,n,1)
+	Case "("
+	CountP+1
+	Case ")"
+	CountP-1
+	Case ","
+	If CountP=0
+	Temp=Left(*Line\Text,n-1)
+	*Line\Text=Mid(*Line\Text,n+1)
+	If FindString(Temp,"=",1)
+	*NewLine=New_LineCode(StringField(StringField(Temp,1,"="),1,".")+Mid(Temp,FindString(Temp,"=",1)),*Line\File,*Line\Line)
+	Array_AddElement(*Body,*NewLine)
+	Temp=StringField(Temp,1,"=")
+	EndIf
+	If FindString(Temp,".",1)
+	*Attribut\Name=StringField(Temp,1,".")
+	*Attribut\Type=StringField(Temp,2,".")
+	Else
+	*Attribut\Name=Temp
+	*Attribut\Type="i"
+	EndIf
+	ProcedureReturn Precompiler_LoadAttribut(*this,*Line,*List,*Body)
+	EndIf
+	EndSelect
+	Next n
+	If FindString(*Line\Text,"=",1)
+	*NewLine=New_LineCode(StringField(StringField(*Line\Text,1,"="),1,".")+Mid(*Line\Text,FindString(*Line\Text,"=",1)),*Line\File,*Line\Line)
+	Array_AddElement(*Body,*NewLine)
+	*Line\Text=StringField(*Line\Text,1,"=")
+	EndIf
+	If FindString(*Line\Text,".",1)
+	*Attribut\Name=StringField(*Line\Text,1,".")
+	*Attribut\Type=StringField(*Line\Text,2,".")
+	Else
+	*Attribut\Name=*Line\Text
+	*Attribut\Type="i"
+	EndIf
+	ProcedureReturn #True
+EndProcedure
+
+Procedure.i Precompiler_LoadStructure(*this.Precompiler,n.i)
+Protected *StructureP.PreCompiler_Structure
+Protected *Line.LineCode
+	*StructureP=New_PreCompiler_Structure()
+	*Line=Array_GetElement(*this\LocalText,n)
+	*StructureP\name=StringField(*Line\Text,2," ")
+	If Compiler_GetStructure(*this\Compiler,*StructureP\Name)
+	System_CodeError(*System,*Line\File,*Line\Line,"Structure already exist")
+	ProcedureReturn #False
+	EndIf
+	Array_AddElement(*this\Structure,*StructureP)
+	*StructureP\Extend=StringField(*Line\Text,4," ")
+	*StructureP\File=*Line\File
+	*StructureP\Line=*Line\Line
+	ProcedureReturn Precompiler_LoadStructureAttribut(*this,n,*StructureP)
+EndProcedure
+
+Procedure.i Precompiler_LoadStructureAttribut(*this.Precompiler,n.i,*StructureP.Precompiler_Structure)
+Protected *Line.LineCode
+Protected *Attribut.Precompiler_StructureAttribut
+	For n=n+1 To Array_CountElement(*this\LocalText)
+	*Line=Array_GetElement(*this\LocalText,n)
+	Select LineIs(*Line\Text)
+	Case #EndStructure
+	ProcedureReturn n
+	Default
+	*Attribut=New_Precompiler_StructureAttribut(*Line\Text)
+	Select LCase(*Attribut\Type)
+	Case "i","l","s","c","b","w","q","d","f"
+	Default
+	If Not Compiler_GetStructure(*this\Compiler,*Attribut\Type)
+	If Not Precompiler_GetStructure(*this,*Attribut\Type)
+	System_CodeError(*System,*Line\File,*Line\Line,"Type not found "+*Attribut\Type)
+	ProcedureReturn #False
+	EndIf
+	EndIf
+	EndSelect
+	*Attribut\Line=*Line\Line
+	*Attribut\File=*Line\File
+	Array_AddElement(*StructureP\Attribut,*Attribut)
+	EndSelect
+	Next n
+	ProcedureReturn n
+EndProcedure
+
+Procedure.i Precompiler_LoadProcedure(*this.Precompiler,n.i)
+Protected *Line.LineCode
+Protected i.i
+Protected *ProcedureP.Precompiler_Procedure
+Protected Countp.l
+Protected Temp.s
+Protected Count.l
+	*Line=Array_GetElement(*this\LocalText,n)
+	
+	*ProcedureP=New_Precompiler_Procedure()
+	
+	*ProcedureP\File=*Line\File
+	*ProcedureP\Line=*Line\Line
+	Array_AddElement(*this\Procedure,*ProcedureP)
+	Temp=StringField(*Line\Text,1," ")
+	
+	If FindString(Temp,".",1)
+	*ProcedureP\Type=StringField(Temp,2,".")
+	Temp=StringField(Temp,1,".")
+	Else
+	*ProcedureP\Type="i"
+	EndIf
+	Select LCase(Temp)
+	Case "procedure"
+	*ProcedureP\ProcedureMode=#Mode_Procedure
+	Case "procedurec"
+	*ProcedureP\ProcedureMode=#Mode_ProcedureC
+	Case "proceduredll"
+	*ProcedureP\ProcedureMode=#Mode_ProcedureDLL
+	Case "procedurecdll"
+	*ProcedureP\ProcedureMode=#Mode_ProcedureCDLL
+	EndSelect
+	*Line\Text=Mid(*Line\Text,FindString(*Line\Text," ",1)+1)
+	*ProcedureP\Name=StringField(*Line\Text,1,"(")
+	*Line\Text=Mid(*Line\Text,FindString(*Line\Text,"(",1)+1)
+	Temp=""
+	For i=1 To Len(*Line\Text)
+	Select Mid(*Line\Text,i,1)
+	Case "("
+	Count+1
+	Case ")"
+	Count-1
+	If Count=-1
+	Break
+	EndIf
+	Case ","
+	If Count=0
+	Array_AddElement(*ProcedureP\Attribut,New_Precompiler_ProcedureAttribut(Temp,*Line\File,*Line\Line))
+	Temp=""
+	i+1
+	EndIf
+	EndSelect
+	Temp+Mid(*Line\Text,i,1)
+	Next i
+	If Temp
+	Array_AddElement(*ProcedureP\Attribut,New_Precompiler_ProcedureAttribut(Temp,*Line\File,*Line\Line))
+	EndIf
+	For i=n+1 To Array_CountElement(*this\LocalText)
+	*Line=Array_GetElement(*this\LocalText,i)
+	Select LineIs(*Line\Text)
+	Case #Protected
+	*Line\Text=Mid(*Line\Text,FindString(*Line\Text," ",1)+1)
+	If Not Precompiler_LoadAttribut(*This,*Line,*ProcedureP\LocalV,*ProcedureP\body)
+	ProcedureReturn #False
+	EndIf
+	Case #EndProcedure
+	ProcedureReturn i
+	Default
+	If *Line\Text
+	Array_AddElement(*ProcedureP\body,New_LineCode(*Line\Text,*Line\File,*Line\Line))
+	EndIf
+	EndSelect
+	If i=#False
+	ProcedureReturn #False
+	EndIf
+	Next i
+	*Line=Array_GetElement(*this\LocalText,n)
+	System_CodeError(*System,*Line\File,*Line\Line,"Procedure Ending not found")
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.i Precompiler_LoadVariable(*this.Precompiler,n.l,IsGlobal.b,DefaultType.s="i")
+Protected i.i
+Protected *Line.LineCode
+Protected *NewLine.LineCode
+Protected *NewAttribut.Precompiler_Attribut
+Protected *Variable.Precompiler_Variable
+Protected CountP.i
+Protected Temp.s
+	*Line=Array_GetElement(*this\LocalText,n)
+	
+	For i=1 To Len(*Line\Text)
+	Select Mid(*Line\Text,i,1)
+	Case "("
+	CountP+1
+	Case ")"
+	CountP-1
+	Case ","
+	If CountP=0
+	Temp=Left(*Line\Text,i-1)
+	If FindString(Temp,"=",1)
+	*NewLine=New_LineCode(StringField(StringField(Temp,1,"="),1,".")+Mid(Temp,FindString(Temp,"=",1)),*Line\File,*Line\Line)
+	Array_AddElement(*this\Body,*NewLine)
+	Temp=StringField(Temp,1,"=")
+	EndIf
+	*NewAttribut=New_Precompiler_Attribut()
+	If FindString(Temp,".",1)
+	*NewAttribut\Name=StringField(Temp,1,".")
+	*NewAttribut\Type=StringField(Temp,2,".")
+	Else
+	*NewAttribut\Name=Temp
+	*NewAttribut\Type=DefaultType
+	EndIf
+	If IsGlobal
+	Array_AddElement(*this\GlobalV,*NewAttribut)
+	Else
+	Array_AddElement(*this\LocalV,*NewAttribut)
+	EndIf
+	*Line\Text=Mid(*Line\Text,i+1)
+	If Not Precompiler_LoadVariable(*this,n,IsGlobal,DefaultType)
+	ProcedureReturn #False
+	EndIf
+	EndIf
+	ProcedureReturn #True
+	EndSelect
+	Next i
+	If FindString(*Line\Text,"=",1)
+	*NewLine=New_LineCode(StringField(StringField(*Line\Text,1,"="),1,".")+Mid(*Line\Text,FindString(*Line\Text,"=",1)),*Line\File,*Line\Line)
+	Array_AddElement(*this\Body,*NewLine)
+	*Line\Text=StringField(*Line\Text,1,"=")
+	EndIf
+	*NewAttribut=New_Precompiler_Attribut()
+	If FindString(*Line\Text,".",1)
+	*NewAttribut\Name=StringField(*Line\Text,1,".")
+	*NewAttribut\Type=StringField(*Line\Text,2,".")
+	Else
+	*NewAttribut\Name=*Line\Text
+	*NewAttribut\Type=DefaultType
+	EndIf
+	*NewAttribut\Type=ReplaceString(*NewAttribut\Type,"::","_")
+	If IsGlobal
+	Array_AddElement(*this\GlobalV,*NewAttribut)
+	Else
+	Array_AddElement(*this\LocalV,*NewAttribut)
+	EndIf
+	ProcedureReturn #True
+EndProcedure
+
+Procedure.i Precompiler_LoadMethod(*this.Precompiler,n.i,*Class.Precompiler_Class)
+Protected *Line.LineCode
+Protected i.i
+Protected *ProcedureP.Precompiler_Method
+Protected Countp.l
+Protected *Attribut.Precompiler_Attribut
+Protected *CAttribut.Precompiler_ClassAttribut
+Protected Type.l
+Protected Temp.s
+Protected Count.l
+	*Line=Array_GetElement(*this\LocalText,n)
+	
+	*ProcedureP=New_Precompiler_Method()
+	
+	*ProcedureP\Attribut.Array=New_Array()
+	*ProcedureP\LocalV.Array=New_Array()
+	*ProcedureP\Body.Array=New_Array()
+	If LCase(StringField(*Line\Text,1," "))="static"
+	*Line\Text=Mid(*Line\Text,8)
+	Array_AddElement(*Class\StaticMethod,*ProcedureP)
+	Type=2
+	Else
+	If Not Precompiler_Class_IsConstructor(*Class,*Line\Text)
+	Array_AddElement(*Class\Method,*ProcedureP)
+	Array_AddElement(*ProcedureP\Attribut,New_Precompiler_ProcedureAttribut("*this."+*Class\Name,*Line\File,*Line\Line))
+	Else
+	Type=1
+	*Attribut=New_Precompiler_Attribut()
+	*Attribut\File=*Line\File
+	*Attribut\Line=*Line\Line
+	*Attribut\Name="*this"
+	*Attribut\Type=*Class\Name
+	Array_AddElement(*ProcedureP\LocalV,*Attribut)
+	Array_AddElement(*ProcedureP\Body,New_LineCode("*this=allocatememory(sizeof("+*Class\Name+"))",*Line\File,*Line\Line))
+	For i=1 To Array_CountElement(*Class\Attribut)
+	*CAttribut=Array_GetElement(*Class\Attribut,i)
+	If *CAttribut\DefaultValue
+	Array_AddElement(*ProcedureP\Body,New_LineCode(Chr(9)+"*this\"+*CAttribut\Name+"="+*CAttribut\DefaultValue,*CAttribut\File,*CAttribut\Line))
+	EndIf
+	Next i
+	Array_AddElement(*Class\Constructor,*ProcedureP)
+	EndIf
+	EndIf
+	*ProcedureP\File=*Line\File
+	*ProcedureP\Line=*Line\Line
+	Array_AddElement(*this\Procedure,*ProcedureP)
+	Temp=StringField(*Line\Text,1," ")
+	
+	If FindString(Temp,".",1)
+	*ProcedureP\Type=StringField(Temp,2,".")
+	Temp=StringField(Temp,1,".")
+	Else
+	*ProcedureP\Type="i"
+	EndIf
+	Select LCase(Temp)
+	Case "procedure"
+	*ProcedureP\ProcedureMode=#Mode_Procedure
+	Case "procedurec"
+	*ProcedureP\ProcedureMode=#Mode_ProcedureC
+	Case "proceduredll"
+	*ProcedureP\ProcedureMode=#Mode_ProcedureDLL
+	Case "procedurecdll"
+	*ProcedureP\ProcedureMode=#Mode_ProcedureCDLL
+	EndSelect
+	*Line\Text=Mid(*Line\Text,FindString(*Line\Text," ",1)+1)
+	Select Type
+	Case 1
+	*ProcedureP\ClassName=*Class\Name
+	*ProcedureP\Name="New_"+*Class\Name
+	Case 2
+	*ProcedureP\ClassName=StringField(*Line\Text,1,"(")
+	*ProcedureP\Name=*Class\Name+"_Static_"+*ProcedureP\ClassName
+	Default
+	*ProcedureP\ClassName=StringField(*Line\Text,1,"(")
+	*ProcedureP\Name=*Class\Name+"_"+*ProcedureP\ClassName
+	EndSelect
+	*Line\Text=Mid(*Line\Text,FindString(*Line\Text,"(",1)+1)
+	Temp=""
+	For i=1 To Len(*Line\Text)
+	Select Mid(*Line\Text,i,1)
+	Case "("
+	Count+1
+	Case ")"
+	Count-1
+	If Count=-1
+	Break
+	EndIf
+	Case ","
+	If Count=0
+	Array_AddElement(*ProcedureP\Attribut,New_Precompiler_ProcedureAttribut(Temp,*Line\File,*Line\Line))
+	Temp=""
+	i+1
+	EndIf
+	EndSelect
+	Temp+Mid(*Line\Text,i,1)
+	Next i
+	If Temp
+	Array_AddElement(*ProcedureP\Attribut,New_Precompiler_ProcedureAttribut(Temp,*Line\File,*Line\Line))
+	EndIf
+	For i=n+1 To Array_CountElement(*this\LocalText)
+	*Line=Array_GetElement(*this\LocalText,i)
+	Select LineIs(*Line\Text)
+	Case #Protected
+	*Line\Text=Mid(*Line\Text,FindString(*Line\Text," ",1)+1)
+	If Not Precompiler_LoadAttribut(*This,*Line,*ProcedureP\LocalV,*ProcedureP\body)
+	ProcedureReturn #False
+	EndIf
+	Case #EndProcedure
+	If Type=1
+	Array_AddElement(*ProcedureP\Body,New_LineCode(Chr(9)+"ProcedureReturn *this",*Line\File,*Line\Line))
+	EndIf
+	ProcedureReturn i
+	Default
+	If *Line\Text
+	Array_AddElement(*ProcedureP\body,New_LineCode(*Line\Text,*Line\File,*Line\Line))
+	EndIf
+	EndSelect
+	If i=#False
+	ProcedureReturn #False
+	EndIf
+	Next i
+	*Line=Array_GetElement(*this\LocalText,n)
+	System_CodeError(*System,*Line\File,*Line\Line,"Procedure Ending not found")
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.i Precompiler_GetClass(*this.Precompiler,Name.s)
+Protected n.i
+Protected *Class.Precompiler_Class
+	For n=1 To CountEllement(*this\Class)
+	*Class=GetEllement(*this\Class,n)
+	If LCase(*Class\Name)=LCase(Name)
+	ProcedureReturn *Class
+	EndIf
+	Next n
+	ProcedureReturn #Null
+EndProcedure
+
+Procedure.i Precompiler_Constructor(*this.Precompiler,*Class.Precompiler_Class)
+Protected *Method.Precompiler_Method
+Protected *Attribut.Precompiler_Attribut
+Protected n.i
+Protected *CAttribut.Precompiler_ClassAttribut
+	*Method=New_Precompiler_Method()
+	*Attribut=New_Precompiler_Attribut()
+	*Method\Attribut.Array=New_Array()
+	*Method\LocalV.Array=New_Array()
+	*Method\Body.Array=New_Array()
+	*Method\ClassName=*Class\Name
+	*Method\Name="New_"+*Class\Name
+	*Method\ProcedureMode=#Mode_Procedure
+	Array_AddElement(*Class\Constructor,*Method)
+	Array_AddElement(*this\Procedure,*Method)
+	*Attribut\Name="*this"
+	*Attribut\Type=*Class\Name
+	Array_AddElement(*Method\LocalV,*Attribut)
+	Array_AddElement(*Method\Body,New_LineCode(Chr(9)+"*this = AllocateMemory(SizeOf("+*Class\Name+"))","",#Null))
+	For n=1 To Array_CountElement(*Class\Attribut)
+	*CAttribut=Array_GetElement(*Class\Attribut,n)
+	If *CAttribut\DefaultValue
+	Array_AddElement(*Method\Body,New_LineCode(Chr(9)+"*this\"+*CAttribut\Name+"="+*CAttribut\DefaultValue,*CAttribut\File,*CAttribut\Line))
+	EndIf
+	Next n
+	Array_AddElement(*Method\Body,New_LineCode(Chr(9)+"ProcedureReturn *this","",#Null))
+EndProcedure
+
+Procedure.i Precompiler_LoadClass(*this.Precompiler,n.i,NameSpace.s="",*ClassList.Array=#Null)
+Protected *Line.LineCode
+Protected i.i
+Protected *temp.Array
+Protected *Class.Precompiler_Class
+	*Line=Array_GetElement(*this\LocalText,n)
+	
+	*Class=New_Precompiler_Class()
+	*Line\Text=Mid(*Line\Text,FindString(*Line\Text," ",1)+1)
+	*Class\File=*Line\File
+	*Class\Line=*Line\Line
+	*Class\Attribut=New_Array()
+	i=FindString(LCase(*Line\Text)," extends ",1)
+	If i
+	*Class\ClassName=Trim(Left(*Line\Text,i))
+	*Class\Name=NameSpace+Trim(Left(*Line\Text,i))
+	*Class\Extend=Trim(Mid(*Line\Text,i+Len(" extends ")))
+	Else
+	*Class\ClassName=Trim(*Line\Text)
+	*Class\Name=NameSpace+Trim(*Line\Text)
+	*Class\Extend=""
+	EndIf
+	If *ClassList
+	Array_AddElement(*ClassList,*Class)
+	EndIf
+	Array_AddElement(*this\Class,*Class)
+	Array_AddElement(*this\Structure,*Class)
+	For i=n+1 To Array_CountElement(*this\LocalText)
+	*Line.LineCode=Array_GetElement(*this\LocalText,i)
+	Select LineIs(*Line\Text)
+	Case #Class
+	i=Precompiler_LoadClass(*this,i,*Class\Name+"_",*Class\Class)
+	Case #Procedure,#StaticProcedure
+	i=Precompiler_LoadMethod(*this,i,*Class)
+	Case #EndClass
+	If Array_CountElement(*Class\Constructor)=0
+	Precompiler_Constructor(*this,*Class)
+	EndIf
+	ProcedureReturn i
+	Default
+	If *Line\Text
+	Array_AddElement(*Class\Attribut,New_Precompiler_ClassAttribut(*Line))
+	EndIf
+	EndSelect
+	If i=#False
+	ProcedureReturn #False
+	EndIf
+	Next i
+	ProcedureReturn i
+EndProcedure
+
+Procedure.i Precompiler_LoadMacro(*this.Precompiler,n.i)
+Protected *PMacro.Precompiler_Macro
+Protected i.i
+Protected *Line.LineCode
+	*PMacro=New_Precompiler_Macro()
+	
+	Array_AddElement(*this\Macro,*PMacro)
+	*Line=Array_getElement(*this\LocalText,n)
+	*PMacro\Text=*Line\Text
+	*PMacro\File=*Line\File
+	*PMacro\Line=*Line\Line
+	*PMacro\Text=ReleaseString(*PMacro\Text,*this\String)
+	For i=n+1 To Array_CountElement(*this\LocalText)
+	*Line.LineCode=Array_GetElement(*this\LocalText,i)
+	Select LineIs(*Line\Text)
+	Case #EndMacro
+	ProcedureReturn i
+	Default
+	*Line\Text=ReleaseString(*Line\Text,*this\String)
+	Array_AddElement(*PMacro\Body,New_LineCode(*Line\Text,*Line\File,*Line\Line))
+	EndSelect
+	Next i
+	*Line.LineCode=Array_getElement(*this\LocalText,n)
+	System_CodeError(*System,*Line\File,*Line\Line,"EndMacro not found")
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.i Precompiler_getLine(*this.Precompiler,n.i)
+	ProcedureReturn Array_GetElement(*this\LocalText,n)
+EndProcedure
+
+Procedure.i Precompiler_restart(*this.Precompiler,*Compiler.Compiler)
+Protected n.i
+Protected *Line.LineCode
+Protected *Struct.Precompiler_Structure
+	Array_RemoveAll(*this\Class)
+	Array_RemoveAll(*this\Procedure)
+	Array_RemoveAll(*this\LocalV)
+	Array_RemoveAll(*this\GlobalV)
+	For n=1 To Array_CountElement(*this\LocalText)
+	*Line=Array_GetElement(*this\LocalText,n)
+	LineCode_Free(*Line)
+	Next n
+	Array_RemoveAll(*this\LocalText)
+	For n=1 To Array_CountElement(*this\Body)
+	*Line=Array_GetElement(*this\Body,n)
+	LineCode_Free(*Line)
+	Next n
+	Array_RemoveAll(*this\Body)
+	Array_RemoveAll(*this\Constant)
+	Array_RemoveAll(*this\Macro)
+	For n=1 To Array_CountElement(*this\Structure)
+	*Struct=Array_GetElement(*this\Structure,n)
+	Precompiler_Structure_Free(*Struct)
+	Next n
+	Array_RemoveAll(*this\Structure)
+	Array_RemoveAll(*this\String)
+	*this\IncludeImportX=""
+	*this\IncludeFileX=""
+	*this\Error=#False
+	*this\Compiler=*Compiler
+EndProcedure
+
+Procedure.i Precompiler_start(*this.Precompiler,File.s)
+Protected LigneNbr.i
+Protected CompilerCondition.s
+Protected FileID.i
+Protected BOM.b
+Protected Line.s
+Protected Temp.s
+Protected start.i
+Protected val.l
+Protected LineNbr.i
+	FileID=OpenFile(#PB_Any,File)
+	If Not FileID
+	IHM_WriteMessage(*System\IHM,"Cant read file : "+File)
+	ProcedureReturn #False
+	Else
+	IHM_WriteMessage(*System\IHM,"Start to read:"+File)
+	EndIf
+	BOM=ReadStringFormat(FileID)
+	
+	LineNbr=1
+	While Not Eof(FileID)
+	Line=ReadString(FileID,BOM)
+	Line=FormatText(Line,*this\String)
+	If Line
+	Select LineIs(Line)
+	Case #ImportInclude
+	Temp=PeekS(GetEllement(*this\String,Val(StringField(Line,2,"$"))))
+	Temp=MainPath+"API/"+ReplaceString(Temp,".","/")+".Class.pb"
+	If FindString(*this\IncludeImportX,LCase(Temp)+";",1)=#Null
+	*this\IncludeImportX+LCase(Temp)+";"
+	If FileSize(Temp)<0
+	System_CodeError(*System,File,LineNbr,"File Not Found "+File)
+	ProcedureReturn #False
+	EndIf
+	If Not Precompiler_start(*this,Temp)
+	ProcedureReturn #False
+	EndIf
+	Else
+	IHM_WriteMessage(*System\IHM,"Import ingore "+Temp)
+	EndIf
+	Case #FileInclude
+	Temp=PeekS(GetEllement(*this\String,Val(StringField(Line,2,"$"))))
+	If FileSize(GetPathPart(File)+Temp)>=0
+	If Not Precompiler_start(*this,GetPathPart(File)+Temp)
+	ProcedureReturn #False
+	EndIf
+	ElseIf FileSize(Temp)>=0
+	If Not Precompiler_start(*this,Temp)
+	ProcedureReturn #False
+	EndIf
+	Else
+	System_CodeError(*System,File,LineNbr,"File Not Found "+File)
+	ProcedureReturn #False
+	EndIf
+	Default
+	If Line
+	Array_AddElement(*this\LocalText,New_LineCode(Line,File,LineNbr))
+	EndIf
+	EndSelect
+	EndIf
+	LineNbr+1
+	Wend
+	CloseFile(FileID)
+	ProcedureReturn #True
+EndProcedure
+
+Procedure.i Precompiler_FormatCode(*this.Precompiler)
+Protected *Line.LineCode
+Protected n.i
+Protected *StructureP.Precompiler_Structure
+Protected i.i
+Protected *Attribut.Precompiler_Attribut
+Protected *Constant.Precompiler_Constant
+Protected *Variable.Precompiler_Variable
+Protected *PProcedure.Precompiler_Procedure
+Protected *PAttribut.Precompiler_ProcedureAttribut
+Protected *PMacro.Precompiler_Macro
+Protected *SAttribut.Precompiler_StructureAttribut
+	For n=1 To Array_CountElement(*this\LocalText)
+	*Line=Array_GetElement(*this\LocalText,n)
+	LineCode_Free(*Line)
+	Next n
+	Array_RemoveAll(*this\LocalText)
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("; Code generated by Chronos                                 ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("EnableExplicit ;Variable declaration enable","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("; Macro                                                     ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	For n=1 To Array_CountElement(*this\Macro)
+	*PMacro=Array_GetElement(*this\Macro,n)
+	Array_AddElement(*this\LocalText,*PMacro)
+	For i=1 To Array_CountElement(*PMacro\Body)
+	Array_AddElement(*this\LocalText,Array_GetElement(*PMacro\Body,i))
+	Next i
+	Array_AddElement(*this\LocalText,New_LineCode("EndMacro",*PMacro\File,*PMacro\Line))
+	Next n
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("; Constantes                                                ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("","",#Null))
+	For n=1 To Array_CountElement(*this\Constant)
+	*Constant=Array_getElement(*this\Constant,n)
+	*Constant\Value=ReleaseString(*Constant\Value,*this\String)
+	If *Constant\PrecompilerCondition
+	Array_AddElement(*this\LocalText,New_LineCode("CompilerIf "+*Constant\PrecompilerCondition,*Constant\CFile,*Constant\CLine))
+	EndIf
+	Array_AddElement(*this\LocalText,New_LineCode(*Constant\Name+"="+*Constant\Value,*Constant\File,*Constant\Line))
+	If *Constant\PrecompilerCondition
+	Array_AddElement(*this\LocalText,New_LineCode("CompilerEndIf","",#Null))
+	EndIf
+	Next n
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("; Structures                                                ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	For n=1 To Array_CountElement(*this\Structure)
+	Array_AddElement(*this\LocalText,New_LineCode("","",#Null))
+	*StructureP=Array_GetElement(*this\Structure,n)
+	If *StructureP\Extend
+	*StructureP\Extend=ReplaceString(*StructureP\Extend,"::","_")
+	If Not Precompiler_GetStructure(*this,*StructureP\Extend)And Not Compiler_GetStructure(*this\Compiler,*StructureP\Extend)
+	System_CodeError(*System,*StructureP\File,*StructureP\Line,"Structure "+*StructureP\Extend+" extending "+*StructureP\Name+" not found")
+	ProcedureReturn #False
+	EndIf
+	EndIf
+	*Line=New_LineCode("Structure "+*StructureP\Name,*StructureP\File,*StructureP\Line)
+	Array_AddElement(*this\LocalText,*Line)
+	If *StructureP\Extend
+	*Line\Text+" Extends "+*StructureP\Extend
+	EndIf
+	For i=1 To Array_CountElement(*StructureP\Attribut)
+	*SAttribut=Array_GetElement(*StructureP\Attribut,i)
+	Array_AddElement(*this\LocalText,New_LineCode(Chr(9)+Precompiler_StructureAttribut_GetDeclaration(*SAttribut),*SAttribut\File,*SAttribut\Line))
+	Next i
+	Array_AddElement(*this\LocalText,New_LineCode("EndStructure",*StructureP\File,*StructureP\Line))
+	Next n
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("; Variables                                                 ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	For n=1 To Array_CountElement(*this\GlobalV)
+	*Variable=Array_getElement(*this\GlobalV,n)
+	Array_AddElement(*this\LocalText,New_LineCode("Global "+*Variable\Name+"."+*Variable\Type,*Variable\File,*Variable\Line))
+	Next n
+	For n=1 To Array_CountElement(*this\LocalV)
+	*Variable=Array_getElement(*this\LocalV,n)
+	Array_AddElement(*this\LocalText,New_LineCode("Define "+*Variable\Name+"."+*Variable\Type,*Variable\File,*Variable\Line))
+	Next n
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("; Declare                                                   ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	For n=1 To Array_CountElement(*this\Procedure)
+	*PProcedure=Array_getElement(*this\Procedure,n)
+	*Line=New_LineCode("",*PProcedure\File,*PProcedure\Line)
+	Select *PProcedure\ProcedureMode
+	Case #Mode_Procedure
+	*Line\Text="Declare"
+	Case #Mode_ProcedureC
+	*Line\Text="DeclareC"
+	Case #Mode_ProcedureDLL
+	*Line\Text="DeclareDLL"
+	Case #Mode_ProcedureCDLL
+	*Line\Text="DeclareCDLL"
+	EndSelect
+	*Line\Text+"."
+	Select LCase(*PProcedure\Type)
+	Case "i","l","s","b","f","d","c","q","w"
+	*Line\Text+*PProcedure\Type
+	Default
+	*Line\Text+"i"
+	EndSelect
+	*Line\Text+" "+*PProcedure\Name+"("
+	For i=1 To Array_CountElement(*PProcedure\Attribut)
+	If i>1
+	*Line\Text+","
+	EndIf
+	*PAttribut=Array_GetElement(*PProcedure\Attribut,i)
+	*PAttribut\Type=ReplaceString(*PAttribut\Type,"::","_")
+	*PAttribut\DefaultValue=ReleaseString(*PAttribut\DefaultValue,*This\String)
+	*Line\Text+Precompiler_ProcedureAttribut_GetDeclaration(*PAttribut)
+	Next i
+	*Line\Text+")"
+	Array_AddElement(*this\LocalText,*Line)
+	Next n
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("; Procedures                                                ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	For n=1 To Array_CountElement(*this\Procedure)
+	*PProcedure=Array_getElement(*this\Procedure,n)
+	*Line=New_LineCode("",*PProcedure\File,*PProcedure\Line)
+	Select *PProcedure\ProcedureMode
+	Case #Mode_Procedure
+	*Line\Text="Procedure"
+	Case #Mode_ProcedureC
+	*Line\Text="ProcedureC"
+	Case #Mode_ProcedureDLL
+	*Line\Text="ProcedureDLL"
+	Case #Mode_ProcedureCDLL
+	*Line\Text="ProcedureCDLL"
+	EndSelect
+	*Line\Text+"."
+	Select LCase(*PProcedure\Type)
+	Case "i","l","s","b","f","d","c","q","w"
+	*Line\Text+*PProcedure\Type
+	Default
+	*Line\Text+"i"
+	EndSelect
+	*Line\Text+" "+*PProcedure\Name+"("
+	For i=1 To Array_CountElement(*PProcedure\Attribut)
+	If i>1
+	*Line\Text+","
+	EndIf
+	*PAttribut=Array_GetElement(*PProcedure\Attribut,i)
+	*Line\Text+Precompiler_ProcedureAttribut_GetDeclaration(*PAttribut)
+	Next i
+	*Line\Text+")"
+	Array_AddElement(*this\LocalText,*Line)
+	For i=1 To Array_CountElement(*PProcedure\LocalV)
+	*PAttribut=Array_GetElement(*PProcedure\LocalV,i)
+	*PAttribut\Type=ReplaceString(*PAttribut\Type,"::","_")
+	Array_AddElement(*this\LocalText,New_LineCode("Protected "+*PAttribut\Name+"."+*PAttribut\Type,*PAttribut\File,*PAttribut\Line))
+	Next i
+	For i=1 To Array_CountElement(*PProcedure\Body)
+	*Line=Array_GetElement(*PProcedure\Body,i)
+	If Not Precompiler_FormatText(*this,*Line,*PProcedure\LocalV,*PProcedure\Attribut)
+	ProcedureReturn #False
+	EndIf
+	*Line\Text=Chr(9)+*Line\Text
+	Array_AddElement(*this\LocalText,*Line)
+	Next i
+	Array_AddElement(*this\LocalText,New_LineCode("EndProcedure",*PProcedure\File,*PProcedure\Line))
+	Next n
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode("; Body                                                      ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";                                                           ;","",#Null))
+	Array_AddElement(*this\LocalText,New_LineCode(";===========================================================;","",#Null))
+	For n=1 To Array_CountElement(*this\Body)
+	*Line=Array_getElement(*this\Body,n)
+	If Not Precompiler_FormatText(*this,*Line)
+	ProcedureReturn #False
+	EndIf
+	Array_AddElement(*this\LocalText,New_LineCode(*Line\Text,*Line\File,*Line\Line))
+	Next n
+	ProcedureReturn #True
+EndProcedure
+
+Procedure.i Precompiler_CheckConstructor(*this.Precompiler,*Line.LineCode)
+Protected Text.s
+Protected n.i
+Protected Temp.s
+	Text=LCase(*Line\Text)
+	n=FindString(Text,"new ",1)
+	While n
+	If n=1 Or IsAcceptedBeforePointer(Mid(Text,n-1,1))
+	temp=StringField(Mid(*Line\Text,n+4),1,"(")
+	If IsCorrectClass(temp)
+	If Not Precompiler_GetClass(*this,temp)
+	System_CodeError(*System,*Line\File,*Line\Line,"Class "+temp+" not found")
+	ProcedureReturn #False
+	Else
+	*Line\Text=Left(*Line\Text,n+2)+"_"+Mid(*Line\Text,n+4)
+	EndIf
+	EndIf
+	EndIf
+	n=FindString(Text,"new ",n+1)
+	Wend
+	ProcedureReturn #True
+EndProcedure
+
+Procedure.i Precompiler_FormatText(*this.Precompiler,*Line.LineCode,*Variable.Array=#Null,*Attribut.Array=#Null)
+	*Line\Text=ReplaceString(*Line\Text,"::","_")
+	If Not Precompiler_CheckConstructor(*this,*Line)
+	ProcedureReturn #False
+	EndIf
+	If *Variable=#Null
+	*Variable=*this\LocalV
+	EndIf
+	If Not Precompiler_FormatMethod(*this,*Line,*Variable,*Attribut)
+	ProcedureReturn #False
+	EndIf
+	*Line\Text=ReleaseString(*Line\Text,*this\String)
+	ProcedureReturn #True
+EndProcedure
+
+Procedure.i Precompiler_FormatMethod(*this.Precompiler,*Line.LineCode,*Variable.Array,*Attribut.Array=#Null)
+Protected *Var.Precompiler_Variable
+Protected Char.s
+Protected StartPointer.l
+Protected EndPointer.l
+Protected EndMethod.l
+Protected EndAttribut.l
+Protected i.l
+Protected n.l
+Protected Pointer.s
+Protected CountP.l
+Protected Var.s
+Protected Type.s
+Protected *Class.Precompiler_Class
+Protected Method.s
+Protected *Method.Precompiler_Method
+Protected Ending.l
+Protected AttributList.s
+Protected *NewLine.LineCode
+	For n=1 To Len(*Line\Text)
+	If Mid(*Line\Text,n,1)="*"
+	StartPointer=n
+	If n=1 Or(n>1 And IsAcceptedBeforePointer(Mid(*Line\Text,n-1,1)))
+	n+2
+	Char=Mid(*Line\Text,n,1)
+	For n=n To Len(*Line\Text)
+	Char=Mid(*Line\Text,n,1)
+	If Not IsAcceptedForAPointer(Char)
+	Break
+	EndIf
+	Next n
+	If n=Len(*Line\Text)+1
+	Break
+	EndIf
+	Type=""
+	While Char="."
+	EndPointer=n
+	n+1
+	For n=n To Len(*Line\Text)
+	Char=Mid(*Line\Text,n,1)
+	If Not IsAcceptedForAPointer(Char)
+	Break
+	EndIf
+	Next n
+	If n=Len(*Line\Text)+1
+	Break
+	EndIf
+	If Mid(*Line\Text,n,1)="("
+	EndMethod=n
+	Method=Mid(*Line\Text,EndPointer+1,EndMethod-EndPointer-1)
+	If Type=""
+	Pointer=Mid(*Line\Text,StartPointer,EndPointer-StartPointer)
+	If FindString(Pointer,"\",1)
+	Var=StringField(Pointer,1,"\")
+	Else
+	Var=Pointer
+	EndIf
+	*Var=#Null
+	If Not *Attribut=#Null
+	*Var=Precompiler_Static_GetVariable(*Attribut,Var)
+	EndIf
+	If Not *Var
+	*Var=Precompiler_Static_GetVariable(*Variable,Var)
+	EndIf
+	If Not *Var
+	*Var=Precompiler_Static_GetVariable(*this\GlobalV,Var)
+	EndIf
+	If Not *Var
+	System_CodeError(*System,*Line\File,*Line\Line,Var+" Not found")
+	ProcedureReturn #False
+	EndIf
+	Type=*Var\type
+	Var=Pointer
+	For i=2 To CountString(Pointer,"\")+1
+	Type=Precompiler_GetTypeFromStructureField(*this,Type,StringField(Pointer,i,"\"))
+	If Type=""
+	System_CodeError(*System,*Line\File,*Line\Line,"Type "+StringField(Pointer,i,"\")+" not found from "+*Var\type)
+	ProcedureReturn #False
+	EndIf
+	Next i
+	EndIf
+	*Class=Precompiler_GetClass(*this,Type)
+	If Not *Class
+	System_CodeError(*System,*Line\File,*Line\Line,Type+" class not found")
+	ProcedureReturn #False
+	EndIf
+	*Method=Precompiler_Class_GetMethod(*Class,Method)
+	If Not *Method
+	System_CodeError(*System,*Line\File,*Line\Line,Method+" method not found")
+	ProcedureReturn #False
+	EndIf
+	CountP=0
+	For n=n To Len(*Line\Text)
+	Select Mid(*Line\Text,n,1)
+	Case "("
+	CountP+1
+	Case ")"
+	CountP-1
+	If CountP=0
+	Break
+	EndIf
+	EndSelect
+	Next n
+	If n=Len(*Line\Text)+1
+	System_CodeError(*System,*Line\File,*Line\Line,"syntax error")
+	ProcedureReturn #False
+	EndIf
+	Ending=n
+	AttributList=Trim(Mid(*Line\Text,EndMethod+1,Ending-EndMethod-1))
+	If AttributList
+	If *NewLine
+	LineCode_Free(*NewLine)
+	EndIf
+	*NewLine=New_LineCode(AttributList,*Line\File,*Line\Line)
+	If Not Precompiler_FormatMethod(*this,*NewLine,*Variable,*Attribut)
+	LineCode_Free(*NewLine)
+	ProcedureReturn #False
+	EndIf
+	AttributList=","+*NewLine\Text
+	EndIf
+	AttributList=Pointer+AttributList
+	Pointer=Type+"_"+Method+"("+AttributList+")"
+	n+1
+	*Line\Text=Left(*Line\Text,StartPointer-1)+Pointer+Mid(*Line\Text,n)
+	Else
+	Break
+	EndIf
+	Wend
+	EndIf
+	EndIf
+	Next n
+	ProcedureReturn #True
+EndProcedure
+
+Procedure.i Precompiler_SaveFile(*this.Precompiler,File.s)
+Protected BOM.i
+Protected FileID.i
+Protected n.l
+Protected *Line.LineCode
+	BOM=#PB_UTF8
+	
+	If FileSize(File)>0
+	FileID=OpenFile(#PB_Any,File)
+	Else
+	FileID=CreateFile(#PB_Any,File)
+	EndIf
+	If Not IsFile(FileID)
+	MessageRequester("Error","Can't read/open "+File)
+	ProcedureReturn #False
+	Else
+	TruncateFile(FileID)
+	WriteStringFormat(FileId,BOM)
+	For n=1 To Array_CountElement(*this\LocalText)
+	*Line=Array_GetElement(*this\LocalText,n)
+	WriteStringN(FileID,*line\Text,BOM)
+	Next n
+	CloseFile(FileID)
+	EndIf
+	ProcedureReturn #True
+EndProcedure
+
+Procedure.i Precompiler_LoadFileStructure(*this.Precompiler)
+Protected n.i
+Protected *Line.LineCode
+Protected Temp.s
+Protected PrecompilerCondition.s
+Protected *Element.Precompiler_Element
+	For n=1 To Array_CountElement(*this\LocalText)
+	*Line=Array_GetElement(*this\LocalText,n)
+	Select LineIs(*Line\Text)
+	Case #Macro
+	n=Precompiler_LoadMacro(*this,n)
+	Case #CompilerCondition
+	If *Element
+	Precompiler_Element_Free(*Element)
+	*Element=#Null
+	EndIf
+	*Element=New_Precompiler_Element()
+	*Element\File=*Line\File
+	*Element\Line=*Line\Line
+	*Element\PrecompilerCondition=Mid(*Line\Text,FindString(*Line\Text," ",1)+1)
+	Case #CompilerEndCondition
+	If *Element
+	Precompiler_Element_Free(*Element)
+	*Element=#Null
+	Else
+	System_CodeError(*System,*Line\File,*Line\Line,"CompilerEndCondition Without Condition")
+	EndIf
+	Case #Enumeration
+	n=Precompiler_LoadEnumeration(*this,n,*Element)
+	Case #Constant
+	Array_AddElement(*this\Constant,New_Precompiler_Constant(*Line,*Element))
+	Case #Structure
+	n=Precompiler_LoadStructure(*this,n)
+	Case #Procedure
+	n=Precompiler_LoadProcedure(*this,n)
+	Case #Global
+	*Line\Text=Mid(*Line\Text,Len("global ")+1)
+	Precompiler_LoadVariable(*this,n,#True)
+	Case #Define
+	If FindString(Left(*Line\Text,FindString(*Line\Text," ",1)-1),".",1)
+	Temp=StringField(Left(*Line\Text,FindString(*Line\Text," ",1)-1),2,".")
+	*Line\Text=Mid(*Line\Text,FindString(*Line\Text," ",1)+1)
+	Precompiler_LoadVariable(*this,n,#False,Temp)
+	Else
+	*Line\Text=Mid(*Line\Text,FindString(*Line\Text," ",1)+1)
+	Precompiler_LoadVariable(*this,n,#False)
+	EndIf
+	Case #Class
+	n=Precompiler_LoadClass(*this,n)
+	Default
+	If *Line\Text
+	Array_AddElement(*this\Body,New_Linecode(*line\Text,*line\File,*line\Line))
+	EndIf
+	EndSelect
+	If n=#False
+	ProcedureReturn #False
+	EndIf
+	Next n
+	ProcedureReturn #True
+EndProcedure
+
+Procedure.i Precompiler_GetStructure(*this.Precompiler,Name.s,*StructureNotIn.Precompiler_Structure=#Null)
+Protected n.i
+Protected *StructureP.Precompiler_Structure
+	Name=LCase(Name)
+	For n=1 To Array_CountElement(*this\Structure)
+	*StructureP=Array_GetElement(*this\Structure,n)
+	If LCase(*StructureP\Name)=Name
+	If *StructureNotIn
+	If Not *StructureP=*StructureNotIn
+	ProcedureReturn *StructureP
+	EndIf
+	Else
+	ProcedureReturn *StructureP
+	EndIf
+	EndIf
+	Next n
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.s Precompiler_GetTypeFromStructureField(*this.Precompiler,Type.s,Field.s)
+Protected n.i
+Protected *PStructure.Precompiler_Structure
+Protected *Field.Precompiler_Attribut
+Protected *Class.Precompiler_Class
+	For n=1 To CountEllement(*this\Structure)
+	*PStructure=GetEllement(*this\Structure,n)
+	If LCase(*PStructure\Name)=LCase(Type)
+	*Field=Precompiler_Structure_GetField(*PStructure,Field)
+	If Not *Field
+	*Class=Precompiler_GetClass(*this,Type)
+	If *Class
+	If *Class\Extend
+	*Class=Precompiler_GetClass(*this,*Class\Extend)
+	If *Class
+	ProcedureReturn Precompiler_GetTypeFromStructureField(*this,*Class\Name,Field)
+	EndIf
+	EndIf
+	Else
+	ProcedureReturn ""
+	EndIf
+	ProcedureReturn ""
+	EndIf
+	ProcedureReturn *Field\Type
+	EndIf
+	Next n
+	ProcedureReturn ""
+EndProcedure
+
+Procedure.i Precompiler_Static_GetVariable(*Array.Array,Name.s)
+Protected n.i
+Protected *ptr.Precompiler_Variable
+	Name=LCase(Name)
+	For n=1 To Array_CountElement(*Array)
+	*ptr=Array_GetElement(*Array,n)
+	If LCase(*ptr\Name)=Name
+	ProcedureReturn *ptr
+	EndIf
+	Next n
+	ProcedureReturn #Null
+EndProcedure
+
+Procedure.i New_Precompiler()
+	protected *this.Precompiler = AllocateMemory(SizeOf(Precompiler))
+	*this\Class = New_Array()
+	*this\Procedure = New_Array()
+	*this\LocalV = New_Array()
+	*this\GlobalV = New_Array()
+	*this\LocalText = New_Array()
+	*this\Constant = New_Array()
+	*this\Macro = New_Array()
+	*this\Structure = New_Array()
+	*this\String = New_Array()
+	*this\Body = New_Array()
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_Element
+
+Procedure.i Precompiler_Element_Free(*this.Precompiler_Element)
+	FreeMemory(*this)
+EndProcedure
+
+Procedure.i New_Precompiler_Element()
+	protected *this.Precompiler_Element = AllocateMemory(SizeOf(Precompiler_Element))
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_Constant
+
+Procedure.i New_Precompiler_Constant(*Line.LineCode,*Element.Precompiler_Element)
+	protected *this.Precompiler_Constant = AllocateMemory(SizeOf(Precompiler_Constant))
+	*this\Name=StringField(*Line\Text,1,"=")
+	*this\Value=ReplaceString(Mid(*Line\Text,FindString(*Line\Text,"=",1)+1),"::","_")
+	*this\File=*Line\File
+	*this\Line=*Line\Line
+	If *Element
+	*this\PrecompilerCondition=*Element\PrecompilerCondition
+	*this\CFile=*Element\File
+	*this\CLine=*Element\Line
+	EndIf
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_Attribut
+
+Procedure.i New_Precompiler_Attribut()
+	protected *this.Precompiler_Attribut = AllocateMemory(SizeOf(Precompiler_Attribut))
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_StructureAttribut
+
+Procedure.s Precompiler_StructureAttribut_GetDeclaration(*this.Precompiler_StructureAttribut)
+Protected retour.s
+	If *this\Ptr
+	retour="*"
+	EndIf
+	retour+*this\Name+"."+*this\Type
+	If *this\Array
+	retour+"["+*this\Array+"]"
+	EndIf
+	ProcedureReturn retour
+EndProcedure
+
+Procedure.i New_Precompiler_StructureAttribut(Text.s)
+	protected *this.Precompiler_StructureAttribut = AllocateMemory(SizeOf(Precompiler_StructureAttribut))
+	If Mid(Text,1,1)="*"
+	*this\Ptr=#True
+	Text=Mid(Text,2)
+	EndIf
+	If FindString(Text,".",1)
+	*this\Type=StringField(Text,2,".")
+	Text=StringField(Text,1,".")
+	Else
+	*this\Type="i"
+	EndIf
+	If FindString(Text,"[",1)
+	*this\Name=StringField(Text,1,"[")
+	*this\Array=StringField(StringField(Text,2,"["),1,"]")
+	Else
+	*this\Name=Text
+	EndIf
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_Structure
+
+Procedure.i Precompiler_Structure_GetField(*this.Precompiler_Structure,Field.s)
+Protected n.i
+Protected *Attribut.Precompiler_Attribut
+	For n=1 To Array_CountElement(*this\Attribut)
+	*Attribut=Array_GetElement(*this\Attribut,n)
+	If LCase(*Attribut\Name)=LCase(Field)
+	ProcedureReturn *Attribut
+	EndIf
+	Next n
+	ProcedureReturn #Null
+EndProcedure
+
+Procedure.i Precompiler_Structure_Free(*this.Precompiler_Structure)
+	FreeMemory(*this)
+EndProcedure
+
+Procedure.i New_Precompiler_Structure()
+	protected *this.Precompiler_Structure = AllocateMemory(SizeOf(Precompiler_Structure))
+	*this\Attribut = New_Array()
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_ProcedureAttribut
+
+Procedure.s Precompiler_ProcedureAttribut_GetDeclaration(*this.Precompiler_ProcedureAttribut)
+Protected Def.s
+	Def=*this\Name+"."+*this\Type
+	If *this\DefaultValue
+	Def+"="+*this\DefaultValue
+	EndIf
+	ProcedureReturn Def
+EndProcedure
+
+Procedure.i New_Precompiler_ProcedureAttribut(Definition.s,File.s,Line.l)
+	protected *this.Precompiler_ProcedureAttribut = AllocateMemory(SizeOf(Precompiler_ProcedureAttribut))
+	If FindString(Definition,"=",1)
+	*this\DefaultValue=Trim(Mid(Definition,FindString(Definition,"=",1)+1))
+	Definition=Mid(Definition,1,FindString(Definition,"=",1)-1)
+	EndIf
+	If FindString(Definition,".",1)
+	*this\Name=StringField(Definition,1,".")
+	*this\Type=StringField(Definition,2,".")
+	Else
+	*this\Name=Definition
+	*this\Type="i"
+	EndIf
+	*this\File=File
+	*this\Line=Line
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_Procedure
+
+Procedure.i New_Precompiler_Procedure()
+	protected *this.Precompiler_Procedure = AllocateMemory(SizeOf(Precompiler_Procedure))
+	*this\Attribut = New_Array()
+	*this\LocalV = New_Array()
+	*this\Body = New_Array()
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_Variable
+
+Procedure.i New_Precompiler_Variable()
+	protected *this.Precompiler_Variable = AllocateMemory(SizeOf(Precompiler_Variable))
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_Method
+
+Procedure.i New_Precompiler_Method()
+	protected *this.Precompiler_Method = AllocateMemory(SizeOf(Precompiler_Method))
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_ClassAttribut
+
+Procedure.i New_Precompiler_ClassAttribut(*Line.LineCode)
+	protected *this.Precompiler_ClassAttribut = AllocateMemory(SizeOf(Precompiler_ClassAttribut))
+	*this\Line=*Line\Line
+	*this\File=*Line\File
+	If Mid(*Line\Text,1,1)="*"
+	*this\Ptr=#True
+	*Line\Text=Mid(*Line\Text,2)
+	EndIf
+	If FindString(*Line\Text,"=",1)
+	*this\DefaultValue=Trim(Mid(*Line\Text,FindString(*Line\Text,"=",1)+1))
+	*Line\Text=StringField(*Line\Text,1,"=")
+	EndIf
+	If FindString(*Line\Text,"[",1)
+	*this\Array=StringField(StringField(*Line\Text,1,"]"),2,"[")
+	*Line\Text=StringField(*Line\Text,1,"[")+StringField(*Line\Text,2,"]")
+	EndIf
+	If FindString(*Line\Text,".",1)
+	*this\Name=StringField(*Line\Text,1,".")
+	*this\Type=StringField(*Line\Text,2,".")
+	Else
+	*this\Name=*Line\Text
+	*this\Type="i"
+	EndIf
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_Class
+
+Procedure.i Precompiler_Class_GetMethod(*this.Precompiler_Class,Name.s)
+Protected n.i
+Protected *Method.Precompiler_Method
+	Name=LCase(Name)
+	For n=1 To Array_CountElement(*this\Method)
+	*Method=Array_GetElement(*this\Method,n)
+	If LCase(*Method\ClassName)=Name
+	ProcedureReturn *Method
+	EndIf
+	Next n
+	ProcedureReturn #Null
+EndProcedure
+
+Procedure.i Precompiler_Class_IsConstructor(*this.Precompiler_Class,Line.s)
+	Line=StringField(Line,1,"(")
+	Line=StringField(Line,CountString(Line," ")+1," ")
+	If LCase(Line)=LCase(*this\ClassName)
+	ProcedureReturn #True
+	Else
+	ProcedureReturn #False
+	EndIf
+EndProcedure
+
+Procedure.i New_Precompiler_Class()
+	protected *this.Precompiler_Class = AllocateMemory(SizeOf(Precompiler_Class))
+	*this\Method = New_Array()
+	*this\StaticMethod = New_Array()
+	*this\Constructor = New_Array()
+	*this\Class = New_Array()
+	
+	ProcedureReturn *this
+EndProcedure
+;Class Precompiler_Macro
+
+Procedure.i New_Precompiler_Macro()
+	protected *this.Precompiler_Macro = AllocateMemory(SizeOf(Precompiler_Macro))
+	*this\Body = New_Array()
+	
+	ProcedureReturn *this
+EndProcedure
+;Class System
+
+Procedure.i System_RemoveCurrentPanel(*this.System,History.b=#True)
+	ProcedureReturn System_RemovePanel(*this,*this\CurrentPanel,History)
+EndProcedure
+
+Procedure.i System_GetCurrentPanel(*this.System)
+	ProcedureReturn GetEllement(*this\Panel,*this\CurrentPanel)
+EndProcedure
+
+Procedure.i System_AddPanel(*this.System,File.s="",*File.File=#Null)
+Protected *New.Panel
+Protected n.i
+	If file
+	File=ReplaceString(File,"\","/")
+	If FileSize(File)<0
+	ProcedureReturn
+	EndIf
+	n=IsOpenFile(*this,File)
+	If n
+	If Not *this\CurrentPanel=n
+	IHM_SetCurrentPanel(*this\IHM,n-1)
+	SetCurrentPanel(*this,n)
+	EndIf
+	ProcedureReturn
+	EndIf
+	If Array_CountElement(*this\Panel)=1
+	Debug 1
+	*New=System_GetCurrentPanel(*this)
+	If *New\File\Path="" And SCI_GetLength(*New\ScintillaGadget)
+	System_RemoveCurrentPanel(*this)
+	EndIf
+	EndIf
+	*New=NewPanel()
+	*New\File=File_LoadFile(file)
+	*New\ScintillaGadget=NewScintillaGadget(*this\IHM,GetFilePart(file))
+	ScintillaSendMessage(*New\ScintillaGadget,#SCI_SETTEXT,0,@*New\File\Text)
+	SCI_ResizeMargins(*New\ScintillaGadget)
+	AutoIdent(*New\ScintillaGadget)
+	Highlight(*New\ScintillaGadget,SCI_GetLineEndPosition(*New\ScintillaGadget,SCI_GETLINECOUNT(*New\ScintillaGadget)))
+	SCI_EmptyUndoBuffer(*New\ScintillaGadget)
+	ElseIf *File
+	n=IsOpenFile(*this,*File\Path)
+	If n
+	If Not *this\CurrentPanel=n
+	IHM_SetCurrentPanel(*this\IHM,n-1)
+	SetCurrentPanel(*this,n)
+	EndIf
+	ProcedureReturn
+	EndIf
+	*New=NewPanel()
+	*New\File=*File
+	*New\ScintillaGadget=NewScintillaGadget(*this\IHM,GetFilePart(*New\File\Path))
+	ScintillaSendMessage(*New\ScintillaGadget,#SCI_SETTEXT,0,@*New\File\Text)
+	SCI_ResizeMargins(*New\ScintillaGadget)
+	AutoIdent(*New\ScintillaGadget)
+	Highlight(*New\ScintillaGadget,SCI_GetLineEndPosition(*New\ScintillaGadget,SCI_GETLINECOUNT(*New\ScintillaGadget)))
+	SCI_EmptyUndoBuffer(*New\ScintillaGadget)
+	Else
+	*New=NewPanel()
+	*New\File=NewFile()
+	*New\ScintillaGadget=NewScintillaGadget(*this\IHM,"<New>")
+	EndIf
+	SetEllement(*System\Panel,CountEllement(*System\Panel)+1,*New)
+	*this\CurrentPanel=CountEllement(*System\Panel)
+EndProcedure
+
+Procedure.i System_PrecompileFile(*this.System,File.s,Destination.s)
+	Precompiler_restart(*this\Precompiler,System_GetCurrentCompiler(*this))
+	IHM_WriteMessage(*System\IHM,"Start Precompilation")
+	If Precompiler_start(*this\Precompiler,File)
+	If Precompiler_LoadFileStructure(*this\Precompiler)
+	If Precompiler_FormatCode(*this\Precompiler)
+	If Precompiler_SaveFile(*this\Precompiler,Destination)
+	ProcedureReturn #True
+	EndIf
+	EndIf
+	EndIf
+	EndIf
+	IHM_WriteMessage(*System\IHM,"Precompilation failed")
+	ProcedureReturn #False
+EndProcedure
+
+Procedure.i System_RemovePanel(*this.System,number.w,History.b=#True)
+Protected *Panel.Panel
+Protected Text.s
+Protected Temp.s
+Protected n.i
+Protected NewText.s
+Protected result.i
+	*Panel=Array_GetElement(*System\Panel,number)
+	
+	If Not *Panel\File\Saved
+	result=MessageRequester(GetText("Misc-Warning"),GetText("Misc-FileNotSaved"),#PB_MessageRequester_YesNoCancel)
+	Select result
+	Case #PB_MessageRequester_Cancel
+	ProcedureReturn-1
+	Case #PB_MessageRequester_Yes
+	Case #PB_MessageRequester_No
+	EndSelect
+	EndIf
+	If *Panel\File\Path
+	If History=#True
+	AddToHistory(*this,*Panel\File\Path)
+	EndIf
+	Text=ReplaceString(Preference_GetPreference(*this\Prefs,"GENERAL","OpenedFile"),"\","/")
+	For n=1 To CountString(Text,";")+1
+	Temp=StringField(Text,n,";")
+	If Not Temp=*Panel\File\Path
+	If NewText
+	NewText+";"
+	EndIf
+	NewText+Temp
+	EndIf
+	Next n
+	Preference_SetPreference(*this\Prefs,"GENERAL","OpenedFile",NewText)
+	Preference_SavePreference(*this\Prefs)
+	EndIf
+	IHM_RemovePanel(*this\IHM,number-1)
+	*this\CurrentPanel-1
+	Array_FreeElement(*this\Panel,number)
+	FreePanel(*Panel)
+	If *this\CurrentPanel=0
+	If Array_CountElement(*this\Panel)=0
+	System_AddPanel(*this)
+	EndIf
+	*this\CurrentPanel=1
+	EndIf
+	IHM_SetCurrentPanel(*this\IHM,*this\CurrentPanel-1)
+	ProcedureReturn #True
+EndProcedure
+
+Procedure.i System_precompilerIsEnable(*this.System)
+	ProcedureReturn Val(Preference_GetPreference(*this\Prefs,"Compiler Options","Precompiler"))
+EndProcedure
+
+Procedure.i System_BuildCurrentFile(*this.System,Destination.s)
+Protected *panel.Panel
+Protected Run.i
+Protected ID.i
+Protected Retour.s
+Protected Final.s
+Protected Flag.s
+Protected *Line.LineCode
+	*panel=GetCurrentPanel(*this)
+	Run=#True
+	
+	If System_PrecompilerIsEnable(*this)
+	Run=System_PrecompileFile(*System,*Panel\File\Path,TempDir+"main.pb")
+	Flag.s=Chr(34)+TempDir+"main.pb"+Chr(34)+MakeCompilerParamList(*this)
+	Else
+	Flag.s=Chr(34)+*Panel\File\Path+Chr(34)+MakeCompilerParamList(*this)
+	EndIf
+	If Run
+	Select Preference_GetPreference(*this\Prefs,"GENERAL","structure")
+	Case "X86"
+	ID=Build(*System\Compiler[#X86],Flag,Destination)
+	Case "X64"
+	ID=Build(*System\Compiler[#X64],Flag,Destination)
+	EndSelect
+	If ID
+	While ProgramRunning(ID)
+	Retour=ReadProgramString(ID)
+	If Retour
+	If Final
+	Final+";"
+	EndIf
+	Final+Retour
+	EndIf
+	Wend
+	EndIf
+	If Final
+	Debug Final
+	If System_PrecompilerIsEnable(*this)
+	Else
+	If FindString(*Panel\File\Path,";",1)
+	System_CodeError(*this,StringField(Final,2,"'"),Val(StringField(Final,3," ")),StringField(Final,CountString(Final,"-")+1,"-"))
+	Else
+	System_CodeError(*this,*Panel\File\Path,Val(StringField(Final,3," ")),StringField(Final,CountString(Final,"-")+1,"-"))
+	EndIf
+	EndIf
+	EndIf
+	EndIf
+EndProcedure
+
+Procedure.i System_CodeError(*this.System,File.s,Line.l,Error.s)
+Protected *Ptr.i
+	IHM_WriteMessage(*this\IHM,"Error:"+Error)
+	System_AddPanel(*this,File)
+	*Ptr=GetCurrentScintillaGadget(*this.System)
+	line-1
+	SCI_GoToPoS(*Ptr,SCI_PositionFromLine(*Ptr,line))
+	SCI_SetSel(*Ptr,SCI_PositionFromLine(*Ptr,line),SCI_PositionFromLine(*Ptr,line)+SCI_LineLength(*Ptr,line))
+	MessageRequester("",Error)
+EndProcedure
+
+Procedure.i System_RunProgram(*this.System,File.s,Param.s,Precompilation.b)
+Protected ID.i
+Protected *Ptr.i
+Protected Retour.s
+Protected Final.s
+Protected *Line.LineCode
+	Select Preference_GetPreference(*this\Prefs,"GENERAL","structure")
+	Case "X86"
+	If *System\Compiler[#X86]
+	ID=Compiler_RunProgram(*System\Compiler[#X86],Chr(34)+File+Chr(34)+Param)
+	EndIf
+	Case "X64"
+	If *System\Compiler[#X64]
+	ID=Compiler_RunProgram(*System\Compiler[#X64],Chr(34)+File+Chr(34)+Param)
+	EndIf
+	EndSelect
+	If ID
+	While ProgramRunning(ID)
+	Retour=ReadProgramString(ID)
+	If Retour
+	If Final
+	Final+";"
+	EndIf
+	Final+Retour
+	EndIf
+	Wend
+	EndIf
+	If Final
+	If Precompilation
+	*Line=Precompiler_getLine(*this\Precompiler,Val(StringField(Final,3," ")))
+	System_CodeError(*this,*Line\File,*Line\Line,StringField(Final,CountString(Final,"-")+1,"-"))
+	Else
+	If FindString(Final,";",1)
+	System_CodeError(*this,StringField(Final,2,"'"),Val(StringField(Final,3," ")),StringField(Final,CountString(Final,"-")+1,"-"))
+	Else
+	System_CodeError(*this,File,Val(StringField(Final,3," ")),StringField(Final,CountString(Final,"-")+1,"-"))
+	EndIf
+	EndIf
+	EndIf
+EndProcedure
+
+Procedure.i System_GetCurrentCompiler(*this.System)
+	Select Preference_GetPreference(*this\Prefs,"GENERAL","structure")
+	Case "X86"
+	ProcedureReturn *System\Compiler[#X86]
+	Case "X64"
+	ProcedureReturn *System\Compiler[#X64]
+	EndSelect
+EndProcedure
+
+Procedure.i New_System()
+	protected *this.System = AllocateMemory(SizeOf(System))
+Protected n.i
+	*this\Panel = New_Array()
+	*this\File = New_Array()
+	*this\Plugin = New_Array()
+	*this\Constante = New_Array()
+	*this\Struct = New_Array()
+	*this\Function = New_Array()
+	*this\Template = New_Array()
+	*this\NewPrefs = New_Array()
+	*this\Precompiler = New_Precompiler()
+	*System=*this
+	*this\Prefs=New_Preference(#MainName)
+	If Not Preference_IsGroup(*this\Prefs,"GENERAL")
+	Preference_SetPreference(*this\Prefs,"GENERAL","Lang","English")
+	Preference_SetPreference(*this\Prefs,"GENERAL","MainPath",GetPathPart(ProgramFilename()))
+	Preference_SetPreference(*this\Prefs,"GENERAL","Structure","X86")
+	Preference_SetPreference(*this\Prefs,"Color","KeyWord",Str(RGB(0,102,102)))
+	Preference_SetPreference(*this\Prefs,"Color","Text",Str(0))
+	Preference_SetPreference(*this\Prefs,"Color","Function",Str(RGB(0,102,102)))
+	Preference_SetPreference(*this\Prefs,"Color","Constant",Str(RGB(169,64,147)))
+	Preference_SetPreference(*this\Prefs,"Color","String",Str(RGB(255,139,37)))
+	Preference_SetPreference(*this\Prefs,"Color","Operator",Str($733CC2))
+	Preference_SetPreference(*this\Prefs,"Color","Comment",Str($bb00))
+	Preference_SetPreference(*this\Prefs,"X64","Compiler Path","")
+	Preference_SetPreference(*this\Prefs,"X64","Compiler Path","")
+	Preference_SetPreference(*this\Prefs,"Compiler Options","ASM","0")
+	Preference_SetPreference(*this\Prefs,"Compiler Options","Unicode","0")
+	Preference_SetPreference(*this\Prefs,"Compiler Options","SafeThread","0")
+	Preference_SetPreference(*this\Prefs,"Compiler Options","OnError","0")
+	Preference_SetPreference(*this\Prefs,"Compiler Options","XPSkin","0")
+	Preference_SetPreference(*this\Prefs,"Compiler Options","AdministratorMode","0")
+	Preference_SetPreference(*this\Prefs,"Compiler Options","UserMode","0")
+	Preference_SetPreference(*this\Prefs,"Compiler Options","Precompiler","0")
+	Preference_SavePreference(*this\Prefs)
+	Else
+	If Preference_GetPreference(*this\Prefs,"GENERAL","structure")=""
+	If Preference_GetPreference(*this\Prefs,"X64","Compiler Path")
+	Preference_SetPreference(*this\Prefs,"GENERAL","structure","X64")
+	Else
+	Preference_SetPreference(*this\Prefs,"GENERAL","structure","X86")
+	EndIf
+	EndIf
+	Preference_SavePreference(*this\Prefs)
+	EndIf
+	If Preference_GetPreference(*this\Prefs,"X86","Compiler Path")
+	*this\Compiler[#X86]=NewCompiler(#X86)
+	EndIf
+	If Preference_GetPreference(*this\Prefs,"X64","Compiler Path")
+	*this\Compiler[#X64]=NewCompiler(#X64)
+	EndIf
+	MainPath=Preference_GetPreference(*this\Prefs,"GENERAL","MainPath")
+	LoadLanguage()
+	*this\IHM=NewIHM()
+	If Preference_GetPreference(*this\Prefs,"GENERAL","OpenedFile")
+	For n=1 To CountString(Preference_GetPreference(*this\Prefs,"GENERAL","OpenedFile"),";")+1
+	System_AddPanel(*this,StringField(Preference_GetPreference(*this\Prefs,"GENERAL","OpenedFile"),n,";"))
+	Next n
+	Else
+	System_AddPanel(*this)
+	EndIf
+	If Preference_GetPreference(*this\Prefs,"GENERAL","OpenedProject")
+	System_OpenProject(*this,Preference_GetPreference(*this\Prefs,"GENERAL","OpenedProject"))
+	EndIf
+	LoadTemplates(*this)
+	ResizeWindows(*this\IHM,#WIN_Main)
+	ShowWindow(*this\IHM,#WIN_Main)
+	IHM_WriteMessage(*this\IHM,"Chronos started")
+	ProcedureReturn *this
+EndProcedure
+Procedure.i CreateArray()
+Protected *this.Array
+	*this=AllocateMemory(SizeOf(Array))
+	*this\ptr=AllocateMemory(1)
+	*this\number=0
+	ProcedureReturn *this
+EndProcedure
+Procedure.i CountEllement(*this.Array)
+	ProcedureReturn *this\number
+EndProcedure
+Procedure.i SetEllement(*this.Array,number.i,*ellement.i)
+	If number>*this\number
+	*this\number=number
+	*this\ptr=ReAllocateMemory(*this\ptr,number *SizeOf(integer))
+	EndIf
+	PokeI(*this\ptr+(number-1)*SizeOf(integer),*ellement)
+EndProcedure
+Procedure.i AddEllement(*this.Array,*ellement.i)
+	SetEllement(*this,*this\number+1,*ellement)
+	ProcedureReturn *this\number
+EndProcedure
+Procedure.i FreeEllement(*this.Array,number.i)
+	If *this\number=1
+	*this\number=0
+	Else
+	If number<*this\number
+	CopyMemory(*this\ptr+SizeOf(integer)*number,*this\ptr+SizeOf(integer)*(number-1),SizeOf(integer)*(*this\number-number))
+	EndIf
+	*this\number-1
+	*this\ptr=ReAllocateMemory(*this\ptr,*this\number *SizeOf(integer))
+	EndIf
+EndProcedure
+Procedure.i GetEllement(*this.Array,number.i)
+	If number<=*this\number
+	ProcedureReturn PeekI(*this\ptr+(number-1)*SizeOf(integer))
+	Else
+	ProcedureReturn 0
+	EndIf
+EndProcedure
+Procedure.i FreeArray(*this.Array)
+	FreeMemory(*this\ptr)
+	FreeMemory(*this)
+EndProcedure
+Procedure.i RemoveAll(*this.Array)
+	*this\number=0
+	*this\ptr=ReAllocateMemory(*this\ptr,1)
+EndProcedure
+Procedure.i FindStringNotInString(Txt.s,TxtToFind.s,char.i,position.i=1)
+	position=FindString(Txt,TxtToFind,position)
+	While position
+	If CountString(Left(Txt,position),Chr(char))%2=0
+	ProcedureReturn position
+	EndIf
+	position=FindString(Txt,TxtToFind,position+1)
+	Wend
+	ProcedureReturn 0
+EndProcedure
+Procedure.s GetTemporayFile(name.s)
+Protected File.s
+Protected n.i
+	File=GetTemporaryDirectory()
+	
+	While Not FileSize(File+name+Str(n)+".pb")=-1
+	n+1
+	Wend
+	ProcedureReturn File+name+Str(n)+".pb"
+EndProcedure
+Procedure.s GetTemporayDirectory(name.s)
+Protected File.s
+Protected n.i
+	File=GetTemporaryDirectory()
+	
+	While FileSize(File+name+Str(n))=-2
+	n+1
+	Wend
+	ProcedureReturn File+name+Str(n)+"/"
+EndProcedure
+Procedure.s FormatText(Line.s,*String.Array)
+Protected CharList.s
+Protected n.i
+	Line=RemoveComment(Line)
+	Line=ReplaceChar(Line)
+	Line=StockString(Line,*String)
+	Line=ReplaceString(Line,Chr(9)," ")
+	While FindString(Line,"  ",1)
+	Line=ReplaceString(Line," "+" "," ")
+	Wend
+	CharList="+-=/\%|!~,()<>.:"
+	
+	For n=1 To Len(CharList)
+	Line=ReplaceString(Line,Mid(CharList,n,1)+" ",Mid(CharList,n,1))
+	Line=ReplaceString(Line," "+Mid(CharList,n,1),Mid(CharList,n,1))
+	Next n
+	Line=ReplaceString(Line,"* ","*")
+	ProcedureReturn Trim(Line)
+EndProcedure
+Procedure.s StockString(Line.s,*StringList.Array)
+Protected n.i
+Protected *String.i
+Protected Text.s
+	n=FindString(Line,Chr(34),1)
+	
+	While n
+	Text=Mid(Line,n+1,FindString(Line,Chr(34),n+1)-n-1)
+	*String=AllocateMemory(Len(Text)+1)
+	PokeS(*String,Text)
+	AddEllement(*StringList,*String)
+	FindString(Line,Chr(34),1)
+	Line=Left(Line,n-1)+"$"+Str(CountEllement(*StringList))+"$"+Mid(Line,FindString(Line,Chr(34),n+1)+1)
+	n=FindString(Line,Chr(34),1)
+	Wend
+	ProcedureReturn Line
+EndProcedure
+Procedure.s ReleaseString(Line.s,*StringList.Array)
+Protected n.i
+Protected Var.s
+	For n=1 To Len(Line)
+	If Mid(Line,n,1)="$"
+	Var=""
+	While n<=Len(Line)
+	n+1
+	If Mid(Line,n,1)="$"
+	Break
+	ElseIf Mid(Line,n,1)>="0" And Mid(Line,n,1)<="9"
+	Var+Mid(Line,n,1)
+	Else
+	Var=""
+	Break
+	EndIf
+	Wend
+	If Var
+	Line=Left(Line,n-Len(Var)-2)+Chr(34)+PeekS(GetEllement(*StringList,Val(Var)))+Chr(34)+Mid(Line,n+1)
+	n+Len(PeekS(GetEllement(*StringList,Val(Var))))-Len(Var)
+	EndIf
+	EndIf
+	Next n
+	ProcedureReturn Line
+EndProcedure
+Procedure.s RemoveComment(Line.s)
+Protected n.i
+	For n=1 To Len(Line)
+	Select Mid(Line,n,1)
+	Case "'"
+	n+2
+	Case Chr(34)
+	n+1
+	While n<=Len(Line)
+	If Mid(Line,n,1)=Chr(34)
+	Break
+	EndIf
+	n+1
+	Wend
+	Case ";"
+	n-1
+	Break
+	EndSelect
+	Next n
+	ProcedureReturn Left(Line,n)
+EndProcedure
+Procedure.s ReplaceChar(Line.s)
+Protected n.i
+Protected Count.i
+	For n=1 To Len(Line)
+	Select Mid(Line,n,1)
+	Case Chr(34)
+	If count
+	Count=#False
+	Else
+	Count=#True
+	EndIf
+	Case "'"
+	If Not Count
+	Line=Left(Line,n-1)+Str(Asc(Mid(Line,n+1,1)))+Mid(Line,n+3)
+	EndIf
+	EndSelect
+	Next n
+	ProcedureReturn Line
+EndProcedure
+Procedure.i IsAcceptedBeforePointer(Char.s)
+	Select Char
+	Case "(",",","+","-","/","*","|","%"," ","=",">","<"
+	ProcedureReturn #True
+	Default
+	ProcedureReturn #False
+	EndSelect
+EndProcedure
+Procedure.i IsCorrectClass(Text.s)
+Protected char.s
+Protected n.i
+	Text=LCase(Text)
+	If Not Text
+	ProcedureReturn #False
+	EndIf
+	char=Mid(Text,1,1)
+	If char<"a" Or char>"z"
+	ProcedureReturn #False
+	EndIf
+	For n=2 To Len(Text)
+	char=Mid(Text,n,1)
+	If(char<"a" Or char>"z")And(char<"0" Or char>"9")And char<>"_"
+	ProcedureReturn #False
+	EndIf
+	Next n
+	ProcedureReturn #True
+EndProcedure
+Procedure.i IsAcceptedForAPointer(Char.s)
+	Select Asc(Char)
+	Case 65 To 90,97 To 122,48 To 57,95,92
+	ProcedureReturn #True
+	Default
+	ProcedureReturn #False
+	EndSelect
+EndProcedure
+Procedure.i NewNewPref(Group.s,Name.s,Value.s)
+Protected *this.NewPrefs
+	*this=AllocateMemory(SizeOf(NewPrefs))
+	*this\Name=Name
+	*this\Group=Group
+	*this\Value=Value
+	AddEllement(*system\NewPrefs,*this)
+EndProcedure
+Procedure.i NewLanguage(File.s)
+Protected Current.s
+Protected FileID.i
+Protected Langue.s
+Protected Position.l
+Protected Section.s
+	Langue=GetFilePart(File)
+	
+	FileID=OpenFile(#PB_Any,File)
+	If IsFile(FileID)
+	ReadString(FileID,#PB_Unicode)
+	While Eof(FileID)=0
+	Current=ReadString(FileID,#PB_Unicode)
+	Current=Trim(Current)
+	If Not(Left(Current,1)=";" Or Len(Current)=0)
+	If Left(Current,1)="[" And Right(Current,1)="]"
+	Section=Mid(Current,2,Len(Current)-2)
+	Else
+	Position=FindString(Current,":",1)
+	If Position>0
+	Preference_SetPreference(*Lang,Langue,Section+"-"+Left(Current,Position-1),Right(Current,Len(Current)-Position))
+	EndIf
+	EndIf
+	EndIf
+	Wend
+	CloseFile(FileID)
+	Else
+	MessageRequester("Error","Language Loading Error")
+	SystemEnd(*System)
+	EndIf
+EndProcedure
+Procedure.i LoadLanguage()
+Protected Dir.i
+	*Lang=New_Preference("lang")
+	Dir=ExamineDirectory(#PB_Any,Preference_GetPreference(*System\Prefs,"GENERAL","MainPath")+"Language","")
+	If Dir
+	While NextDirectoryEntry(Dir)
+	If DirectoryEntryType(Dir)=#PB_DirectoryEntry_File
+	NewLanguage(Preference_GetPreference(*System\Prefs,"GENERAL","MainPath")+"/Language/"+DirectoryEntryName(Dir))
+	EndIf
+	Wend
+	FinishDirectory(Dir)
+	Else
+	MessageRequester("Error","Language Loading Error")
+	SystemEnd(*System)
+	EndIf
+EndProcedure
+Procedure.s GetText(Key.s)
+	ProcedureReturn Preference_GetPreference(*Lang,Preference_GetPreference(*System\Prefs,"GENERAL","Lang"),Key)
+EndProcedure
+Procedure.i SCI_SetIndentationGuides(Gadget.i,Type.l)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_SETINDENTATIONGUIDES,Type)
+EndProcedure
+Procedure.i SCI_GetPosition(Gadget.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_GETCURRENTPOS)
+EndProcedure
+Procedure.i SCI_GetLineEndPosition(Gadget.i,line.i)
+	ProcedureReturn ScintillaSendMessage(gadget,#SCI_GETLINEENDPOSITION,line)
+EndProcedure
+Procedure.i SCI_LineFromPosition(Gadget.i,Pos.i)
+	ProcedureReturn ScintillaSendMessage(gadget,#SCI_LINEFROMPOSITION,Pos)
+EndProcedure
+Procedure.i SCI_PositionFromLine(Gadget.i,Line.i)
+	ProcedureReturn ScintillaSendMessage(gadget,#SCI_POSITIONFROMLINE,Line)
+EndProcedure
+Procedure.i SCI_LineLength(Gadget.i,line.i)
+	ProcedureReturn ScintillaSendMessage(gadget,#SCI_LINELENGTH,line)
+EndProcedure
+Procedure.i SCI_GetLineStartPosition(Gadget.i,line.i)
+	ProcedureReturn SCI_GetLineEndPosition(Gadget,line)-SCI_LINELENGTH(Gadget,line)
+EndProcedure
+Procedure.i SCI_GETLINECOUNT(Gadget.i)
+	ProcedureReturn ScintillaSendMessage(gadget,#SCI_GETLINECOUNT)
+EndProcedure
+Procedure.s SCI_GETLINE(Gadget.i,line.i)
+Protected size.i
+Protected txt.s
+Protected *text.i
+	size=SCI_LINELENGTH(gadget,line)
+	
+	If size
+	*text=AllocateMemory(size)
+	ScintillaSendMessage(gadget,#SCI_GETLINE,line,*text)
+	If SCI_GETLINECOUNT(Gadget)=line+1
+	txt=PeekS(*text,size,#PB_Ascii)
+	Else
+	txt=PeekS(*text,size-1,#PB_Ascii)
+	EndIf
+	FreeMemory(*text)
+	ProcedureReturn txt
+	Else
+	ProcedureReturn ""
+	EndIf
+EndProcedure
+Procedure.i SCI_GetCharAt(Gadget.i,Position.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_GETCHARAT,Position)
+EndProcedure
+Procedure.i SCI_SetLineIdentation(Gadget.i,Ligne.i,Identation.i)
+	ScintillaSendMessage(Gadget,#SCI_SETLINEINDENTATION,Ligne,Identation)
+EndProcedure
+Procedure.i SCI_GetLineIdentation(Gadget.i,Ligne.i)
+	ScintillaSendMessage(Gadget,#SCI_GETLINEINDENTATION,Ligne)
+EndProcedure
+Procedure.i SCI_GetTabWidth(Gadget.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_GETTABWIDTH)
+EndProcedure
+Procedure.i SCI_AddText(Gadget.i,txt.s)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_ADDTEXT,Len(txt),@txt)
+EndProcedure
+Procedure.i SCI_SetLine(Gadget.i,Line.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_GOTOLINE,Line)
+EndProcedure
+Procedure.i SCI_SetPosition(Gadget.i,Position.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_GOTOPOS,Position)
+EndProcedure
+Procedure.i SCI_GetPositionFromLine(Gadget.i,Line.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_POSITIONFROMLINE,Line)
+EndProcedure
+Procedure.i SCI_GetTextWidth(gadget.i,style.i,txt.s)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_TEXTWIDTH,style,@txt)
+EndProcedure
+Procedure.i SCI_ResizeMargins(Gadget.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_SETMARGINWIDTHN,0,2+SCI_GetTextWidth(gadget,#STYLE_DEFAULT,Str(SCI_GETLINECOUNT(Gadget))))
+EndProcedure
+Procedure.i SCI_GetEndStyled(Gadget.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_GETENDSTYLED)
+EndProcedure
+Procedure.i SCI_GetFoldLevel(Gadget.i,Line.l)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_GETFOLDLEVEL,Line)
+EndProcedure
+Procedure.i SCI_SetFoldLevel(Gadget.i,Line.l,Level.l)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_SETFOLDLEVEL,Line,Level)
+EndProcedure
+Procedure.i SCI_CanRedo(Gadget.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_CANREDO)
+EndProcedure
+Procedure.i SCI_CanUndo(Gadget.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_CANUNDO)
+EndProcedure
+Procedure.i SCI_EmptyUndoBuffer(Gadget.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_EMPTYUNDOBUFFER)
+EndProcedure
+Procedure.i SCI_Undo(Gadget.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_UNDO)
+EndProcedure
+Procedure.i SCI_GoToPoS(Gadget.i,pos.l)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_GOTOPOS,pos)
+EndProcedure
+Procedure.i SCI_Redo(Gadget.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_REDO)
+EndProcedure
+Procedure.i SCI_GetLength(Gadget.i)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_GETLENGTH)
+EndProcedure
+Procedure.i SCI_FindString(Gadget.i,Text.s,Position.l=0,Flag.i=#Null)
+Protected Find.TextToFind
+	Find\chrg\cpMin=Position
+	Find\chrg\cpMax=SCI_GetLength(Gadget)
+	Find\lpstrText=@Text
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_FINDTEXT,Flag,@Find)
+EndProcedure
+Procedure.i SCI_SetSel(Gadget.i,anchorPos.l,currentPos.l)
+	ProcedureReturn ScintillaSendMessage(Gadget,#SCI_SETSEL,anchorPos,currentPos)
+EndProcedure
+Procedure.i KeyWordIs(key.s)
+Protected n.i
+	If key=""
+	ProcedureReturn-1
+	EndIf
+	key=LCase(key)
+	For n=1 To CountString(KeyWordUp," ")+1
+	If LCase(StringField(KeyWordUp,n," "))=key
+	ProcedureReturn #LexerState_FoldKeywordUp
+	EndIf
+	Next n
+	For n=1 To CountString(KeyWordDown," ")+1
+	If LCase(StringField(KeyWordDown,n," "))=key
+	ProcedureReturn #LexerState_FoldKeywordDown
+	EndIf
+	Next n
+	For n=1 To CountString(KeyWordNone," ")+1
+	If LCase(StringField(KeyWordNone,n," "))=key
+	ProcedureReturn #LexerState_Keyword
+	EndIf
+	Next n
+	ProcedureReturn-1
+EndProcedure
+Procedure.i Highlight(gadget.l,endpos.l)
+Protected char.l
+Protected keyword.s
+Protected state.i
+Protected linenumber.l
+Protected currentline.l
+Protected currentpos.l
+Protected endlinepos.l
+Protected startkeyword.i
+Protected tempPosition.i
+Protected level.i
+Protected Found.i
+Protected n.i
+	currentline=SCI_LINEFROMPOSITION(gadget,SCI_GetEndStyled(gadget))
+	currentpos=SCI_POSITIONFROMLINE(gadget,currentline)
+	If currentline=0
+	level=#SC_FOLDLEVELBASE
+	Else
+	level=SCI_GetFoldLevel(Gadget,currentline)&~#SC_FOLDLEVELHEADERFLAG
+	EndIf
+	endpos=SCI_GetLineEndPosition(gadget,SCI_LineFromPosition(gadget,endpos))
+	ScintillaSendMessage(gadget,#SCI_STARTSTYLING,currentpos,$1f|#INDICS_MASK)
+	While currentpos<=endpos
+	char=ScintillaSendMessage(gadget,#SCI_GETCHARAT,currentpos)
+	Select char
+	Case 37,42,61,43,45,47,124,38,46,92
+	If char=42
+	If(currentpos+1)>endpos Or Not SCI_LineFromPosition(gadget,currentpos)=SCI_LineFromPosition(gadget,currentpos+1)
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,1,#LexerState_Operator)
+	Else
+	Select ScintillaSendMessage(gadget,#SCI_GETCHARAT,currentpos+1)
+	Case 95,97 To 122,65 To 90
+	tempPosition=currentpos-1
+	While tempPosition>=0 And ScintillaSendMessage(gadget,#SCI_GETCHARAT,tempPosition)=32 And SCI_LineFromPosition(gadget,tempPosition)=SCI_LineFromPosition(gadget,tempPosition+1)
+	tempPosition-1
+	Wend
+	If SCI_LineFromPosition(gadget,tempPosition)=SCI_LineFromPosition(gadget,tempPosition+1)And tempPosition>0
+	Select ScintillaSendMessage(gadget,#SCI_GETCHARAT,tempPosition)
+	Case 95,97 To 122,65 To 90,48 To 57
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,1,#LexerState_Operator)
+	Default
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,1,#LexerState_NonKeyword)
+	EndSelect
+	Else
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,1,#LexerState_NonKeyword)
+	EndIf
+	Default
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,1,#LexerState_Operator)
+	EndSelect
+	EndIf
+	Else
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,1,#LexerState_Operator)
+	EndIf
+	Case 10
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,1,#LexerState_NonKeyword)
+	If Not Found
+	SCI_SetFoldLevel(gadget,currentline,level)
+	Else
+	Found=#False
+	EndIf
+	currentline+1
+	Case 97 To 122,65 To 90
+	endlinepos=SCI_GetLineEndPosition(gadget,SCI_LineFromPosition(gadget,currentpos))
+	keyword=Chr(char)
+	While currentpos<endlinepos
+	currentpos+1
+	char=ScintillaSendMessage(gadget,#SCI_GETCHARAT,currentpos)
+	If Not((char>=97 And char<=122)Or(char>=65 And char<=90)Or char=95 Or(char>=48 And char<=57))
+	currentpos-1
+	Break
+	EndIf
+	keyword+Chr(char)
+	Wend
+	If Not Found
+	For n=1 To CountString(#SCI_Folding_KEY_UP," ")+1
+	If LCase(keyword)=StringField(#SCI_Folding_KEY_UP,n," ")
+	SCI_SetFoldLevel(gadget,currentline,level|#SC_FOLDLEVELHEADERFLAG)
+	Found=#True
+	level+1
+	Break
+	EndIf
+	Next n
+	If Not Found
+	For n=1 To CountString(#SCI_Folding_KEY_Down," ")+1
+	If LCase(keyword)=StringField(#SCI_Folding_KEY_Down,n," ")
+	SCI_SetFoldLevel(gadget,currentline,level)
+	Found=#True
+	level-1
+	If level<#SC_FOLDLEVELBASE
+	level=#SC_FOLDLEVELBASE
+	EndIf
+	Break
+	EndIf
+	Next n
+	EndIf
+	EndIf
+	state=-1
+	tempPosition=currentpos
+	While tempPosition<endlinepos
+	tempPosition+1
+	char=ScintillaSendMessage(gadget,#SCI_GETCHARAT,tempPosition)
+	If char=40
+	state=#LexerState_Function
+	Break
+	EndIf
+	If char<>32
+	Break
+	EndIf
+	Wend
+	If state=-1
+	Select KeyWordIs(keyword)
+	Case #LexerState_FoldKeywordUp
+	state=#LexerState_Keyword
+	Case #LexerState_FoldKeywordDown
+	state=#LexerState_Keyword
+	Case #LexerState_Keyword
+	state=#LexerState_Keyword
+	Default
+	state=#LexerState_NonKeyword
+	EndSelect
+	EndIf
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,Len(keyword),state)
+	Case 34
+	endlinepos=SCI_GetLineEndPosition(gadget,SCI_LineFromPosition(gadget,currentpos))
+	startkeyword=1
+	While currentpos<endlinepos
+	currentpos+1
+	startkeyword+1
+	If ScintillaSendMessage(gadget,#SCI_GETCHARAT,currentpos)=34
+	Break
+	EndIf
+	Wend
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,startkeyword,#LexerState_String)
+	Case 59
+	endlinepos=SCI_GetLineEndPosition(gadget,SCI_LineFromPosition(gadget,currentpos))
+	If currentpos+1<=endlinepos
+	If ScintillaSendMessage(gadget,#SCI_GETCHARAT,currentpos+1)=123
+	SCI_SetFoldLevel(gadget,currentline,level|#SC_FOLDLEVELHEADERFLAG)
+	Level+1
+	Found=#True
+	ElseIf ScintillaSendMessage(gadget,#SCI_GETCHARAT,currentpos+1)=125
+	SCI_SetFoldLevel(gadget,currentline,level)
+	Level-1
+	If level<#SC_FOLDLEVELBASE
+	level=#SC_FOLDLEVELBASE
+	EndIf
+	Found=#True
+	EndIf
+	EndIf
+	startkeyword=1
+	While currentpos<endlinepos-1
+	currentpos+1
+	startkeyword+1
+	Wend
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,startkeyword,#LexerState_Comment)
+	Case 9,32
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,1,#LexerState_Space)
+	Case 35
+	endlinepos=SCI_GetLineEndPosition(gadget,SCI_LineFromPosition(gadget,currentpos))
+	startkeyword=1
+	While currentpos<endlinepos
+	currentpos+1
+	char=ScintillaSendMessage(gadget,#SCI_GETCHARAT,currentpos)
+	If Not((char>=97 And char<=122)Or(char>=65 And char<=90)Or char=95 Or(char>=48 And char<=57))
+	currentpos-1
+	Break
+	EndIf
+	startkeyword+1
+	Wend
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,startkeyword,#LexerState_Constant)
+	Default
+	ScintillaSendMessage(gadget,#SCI_SETSTYLING,1,#LexerState_NonKeyword)
+	EndSelect
+	currentpos+1
+	Wend
+EndProcedure
+Procedure.i AutoComplete(Gadget.i,Pos.l)
+Protected Char.i
+Protected txt.s
+Protected currentpos.i
+Protected Line.i
+Protected KeyWord.s
+Protected FirstPosition.i
+Protected last.i
+Protected KeyList.s
+Protected *ptr.i
+Protected temp.i
+	currentpos=Pos
+	Line=SCI_LineFromPosition(Gadget,Pos)
+	
+	FirstPosition=SCI_GetPositionFromLine(Gadget,Line)
+	txt=Left(SCI_GETLINE(Gadget,line),Pos-FirstPosition)
+	If Not CountString(txt,Chr(34))%2=0
+	ProcedureReturn
+	EndIf
+	txt=""
+	char=ScintillaSendMessage(Gadget,#SCI_GETCHARAT,currentpos)
+	While((char>=65 And char<=90)Or(char>=97 And char<=122)Or char=95)And currentpos>=FirstPosition
+	txt+Chr(char)
+	currentpos+1
+	char=ScintillaSendMessage(Gadget,#SCI_GETCHARAT,currentpos)
+	Wend
+	currentpos=pos-1
+	char=ScintillaSendMessage(Gadget,#SCI_GETCHARAT,currentpos)
+	While((char>=65 And char<=90)Or(char>=97 And char<=122)Or char=95)And currentpos>=FirstPosition
+	txt=Chr(char)+txt
+	currentpos-1
+	char=ScintillaSendMessage(Gadget,#SCI_GETCHARAT,currentpos)
+	Wend
+	If currentpos>=FirstPosition
+	Select char
+	Case 58
+	KeyWord=""
+	Case 46
+	KeyWord=" "+CompilerStructure
+	Case 92
+	KeyWord=""
+	Default
+	KeyWord=" "+KeyWordUp+" "+KeyWordDown+" "+KeyWordNone+" "+CompilerFunction+" "+GetFunctionList(*System)+" "
+	EndSelect
+	Else
+	KeyWord=" "+KeyWordUp+" "+KeyWordDown+" "+KeyWordNone+" "+CompilerFunction+" "+GetFunctionList(*System)+" "
+	EndIf
+	If ScintillaSendMessage(Gadget,#SCI_AUTOCACTIVE)
+	ScintillaSendMessage(Gadget,#SCI_AUTOCCANCEL)
+	EndIf
+	If Len(txt)
+	txt=LCase(txt)
+	last=FindString(KeyWord," ",1)
+	While last>0
+	If LCase(Mid(KeyWord,last+1,Len(txt)))=txt
+	temp=FindString(KeyWord," ",last+1)
+	If Keylist
+	Keylist+" "
+	EndIf
+	Keylist+Mid(KeyWord,last+1,temp-last-1)
+	EndIf
+	last=FindString(KeyWord," ",last+1)
+	Wend
+	If Len(KeyList)
+	*ptr=AllocateMemory(Len(KeyList)+1)
+	PokeS(*Ptr,KeyList,Len(KeyList),#PB_Ascii)
+	ScintillaSendMessage(Gadget,#SCI_AUTOCSHOW,Len(txt),*ptr)
+	FreeMemory(*ptr)
+	EndIf
+	EndIf
+EndProcedure
+Procedure.i AutoIdent(Gadget.i)
+Protected Line.l
+Protected Text.s
+Protected CurrentIdent.i
+Protected n.i
+Protected Found.b
+	CurrentIdent=0
+	
+	For Line=0 To SCI_GETLINECOUNT(Gadget)
+	SCI_SetLineIdentation(Gadget,Line,0)
+	Text=LCase(SCI_GETLINE(Gadget,Line))
+	Found=#False
+	If Text
+	For n=1 To CountString(#SCI_Indent_KEY_UP_," ")+1
+	If FindString(Text,StringField(#SCI_Indent_KEY_UP_,n," ")+".",1)=1
+	SCI_SetLineIdentation(Gadget,Line,CurrentIdent *SCI_GetTabWidth(Gadget))
+	Found=#True
+	CurrentIdent+1
+	EndIf
+	Next n
+	If Not Found
+	For n=1 To CountString(#SCI_Indent_KEY_UP," ")+1
+	If FindString(Text,StringField(#SCI_Indent_KEY_UP,n," ")+" ",1)=1 Or Text=StringField(#SCI_Indent_KEY_UP,n," ")
+	SCI_SetLineIdentation(Gadget,Line,CurrentIdent *SCI_GetTabWidth(Gadget))
+	Found=#True
+	CurrentIdent+1
+	EndIf
+	Next n
+	EndIf
+	If Not Found
+	For n=1 To CountString(#SCI_Indent_KEY_UP2," ")+1
+	If FindString(Text,StringField(#SCI_Indent_KEY_UP2,n," ")+" ",1)=1
+	SCI_SetLineIdentation(Gadget,Line,CurrentIdent *SCI_GetTabWidth(Gadget))
+	Found=#True
+	CurrentIdent+2
+	EndIf
+	Next n
+	EndIf
+	If Not Found
+	For n=1 To CountString(#SCI_Indent_KEY_Down," ")+1
+	If FindString(Text,StringField(#SCI_Indent_KEY_Down,n," ")+" ",1)=1 Or Text=StringField(#SCI_Indent_KEY_Down,n," ")
+	CurrentIdent-1
+	SCI_SetLineIdentation(Gadget,Line,CurrentIdent *SCI_GetTabWidth(Gadget))
+	Found=#True
+	EndIf
+	Next n
+	EndIf
+	If Not Found
+	For n=1 To CountString(#SCI_Indent_KEY_Down2," ")+1
+	If FindString(Text,StringField(#SCI_Indent_KEY_Down2,n," "),1)=1 Or Text=StringField(#SCI_Indent_KEY_Down2,n," ")
+	CurrentIdent-2
+	SCI_SetLineIdentation(Gadget,Line,CurrentIdent *SCI_GetTabWidth(Gadget))
+	Found=#True
+	EndIf
+	Next n
+	EndIf
+	If Not Found
+	For n=1 To CountString(#SCI_Indent_KEY_Transition," ")+1
+	If FindString(Text,StringField(#SCI_Indent_KEY_Transition,n," "),1)=1
+	SCI_SetLineIdentation(Gadget,Line,(CurrentIdent-1)*SCI_GetTabWidth(Gadget))
+	Found=#True
+	EndIf
+	Next n
+	EndIf
+	EndIf
+	If Not Found
+	SCI_SetLineIdentation(Gadget,Line,CurrentIdent *SCI_GetTabWidth(Gadget))
+	EndIf
+	Next Line
+EndProcedure
+Procedure.s GetReciproque(Key.s)
+Protected n.i
+	If Not Key
+	ProcedureReturn ""
+	EndIf
+	key=LCase(Key)
+	For n=1 To CountString(KeyWordUp," ")+1
+	If LCase(StringField(KeyWordUp,n," "))=key
+	ProcedureReturn StringField(KeyWordDown,n," ")
+	EndIf
+	Next n
+	ProcedureReturn ""
+EndProcedure
+Procedure.i CheckIdent(Gadget.i,Line.i)
+Protected txt.s
+Protected indent.l
+Protected n.l
+	indent=SCI_GetLineIdentation(Gadget,line)
+	SCI_SetLineIdentation(Gadget,line,0)
+	txt=StringField(SCI_GETLINE(Gadget,line),1," ")
+	SCI_SetLineIdentation(Gadget,line,indent)
+	txt=GetReciproque(txt)
+	If txt
+	SCI_AddText(Gadget,#LF$+txt)
+	SCI_SetLineIdentation(Gadget,line+2,indent+SCI_GetTabWidth(Gadget))
+	SCI_SetLineIdentation(Gadget,line+1,indent)
+	SCI_SetPosition(Gadget,SCI_GetLineEndPosition(Gadget,line+1))
+	EndIf
+EndProcedure
+Procedure.s GetFunctionProto(Gadget.i,Position.i)
+Protected Ligne.i
+Protected LigneSize.i
+Protected Char.i
+Protected txt.s
+Protected LastPosition.i
+Protected Iteration.i
+Protected currentpos.i
+	Ligne=SCI_LineFromPosition(gadget,Position)
+	LigneSize=SCI_LineLength(gadget,Ligne)
+	LastPosition=SCI_GetLineEndPosition(gadget,Ligne)-LigneSize
+	currentpos=Position
+	While currentpos>=LastPosition
+	Char=ScintillaSendMessage(Gadget,#SCI_GETCHARAT,currentpos)
+	Select Char
+	Case 41
+	Iteration+1
+	Case 40
+	If Iteration
+	Iteration-1
+	Else
+	currentpos-1
+	While currentpos>=LastPosition And ScintillaSendMessage(Gadget,#SCI_GETCHARAT,currentpos)=32
+	currentpos-1
+	Wend
+	txt=""
+	Char=ScintillaSendMessage(Gadget,#SCI_GETCHARAT,currentpos)
+	While currentpos>=LastPosition And((char>=65 And char<=90)Or(char>=97 And char<=122)Or char=95)
+	txt=Chr(Char)+txt
+	currentpos-1
+	Char=ScintillaSendMessage(Gadget,#SCI_GETCHARAT,currentpos)
+	Wend
+	If txt
+	ProcedureReturn GetFunctionProtoFromName(*System,txt)
+	EndIf
+	EndIf
+	EndSelect
+	currentpos-1
+	Wend
+	ProcedureReturn ""
+EndProcedure
+ProcedureDLL.i ScintillaCallBack(*Gadget.i,*scinotify.SCNotification)
+Protected CurrentPos.i
+Protected CurrentLine.i
+Protected LigneTxt.s
+	If Not *Gadget=GetCurrentScintillaGadget(*System)
+	ProcedureReturn
+	EndIf
+	CurrentPos=SCI_GetPosition(*Gadget)
+	CurrentLine=SCI_LineFromPosition(*Gadget,CurrentPos)
+	SetStatusBarText(*System\IHM,0,"Ligne: "+Str(SCI_LineFromPosition(*Gadget,CurrentPos))+" Colone: "+Str(CurrentPos)+" Mode: "+Preference_GetPreference(*System\Prefs,"GENERAL","structure"))
+	SetStatusBarText(*System\IHM,1,GetFunctionProto(*Gadget,CurrentPos))
+	Select *scinotify\nmhdr\code
+	Case #SCN_DOUBLECLICK
+	LigneTxt=Trim(RemoveString(SCI_GETLINE(*Gadget,SCI_LineFromPosition(*Gadget,CurrentPos)),Chr(9)))
+	TryOpenFile(*System,StringField(LigneTxt,2,Chr(34)))
+	Case #SCN_CHARADDED
+	CheckUndoRedo(*System)
+	If *scinotify\ch=10
+	CurrentLine=SCI_LineFromPosition(*Gadget,CurrentPos)-1
+	SCI_ResizeMargins(*Gadget)
+	EndIf
+	If((*scinotify\ch>=65 And *scinotify\ch<=90)Or(*scinotify\ch>=97 And *scinotify\ch<=122)Or *scinotify\ch=95)
+	AutoComplete(*Gadget,CurrentPos)
+	EndIf
+	Case #SCN_MODIFIED
+	Select *scinotify\modificationType
+	Case #SC_PERFORMED_USER|#SC_MOD_BEFOREINSERT,#SC_PERFORMED_UNDO|#SC_MOD_BEFOREINSERT,#SC_PERFORMED_REDO|#SC_MOD_BEFOREINSERT
+	CurrentFileModified(*System,*Gadget)
+	CheckUndoRedo(*System)
+	Case #SC_PERFORMED_USER|#SC_MOD_BEFOREDELETE,#SC_PERFORMED_UNDO|#SC_MOD_BEFOREDELETE,#SC_PERFORMED_REDO|#SC_MOD_BEFOREDELETE
+	CurrentFileModified(*System,*Gadget)
+	CheckUndoRedo(*System)
+	EndSelect
+	Case #SCN_STYLENEEDED
+	Highlight(*Gadget,*scinotify\position)
+	Case #SCN_MARGINCLICK
+	ScintillaSendMessage(*Gadget,#SCI_TOGGLEFOLD,ScintillaSendMessage(*Gadget,#SCI_LINEFROMPOSITION,*scinotify\Position))
+	Default
+	EndSelect
+EndProcedure
+Procedure.i NewPanel()
+Protected *this.Panel
+	*this=AllocateMemory(SizeOf(Panel))
+	ProcedureReturn *this
+EndProcedure
+Procedure.i FreePanel(*This.Panel)
+	FreeFile(*This\File)
+	FreeMemory(*This)
+EndProcedure
+Procedure.i NewIHM()
+Protected *this.IHM
+Protected Flag.i
+Protected n.l
+Protected temp.s
+Protected MainPath.s
+Protected *Group.Group
+Protected Dim ColorText.s(10)
+Protected i.i
+	*this=AllocateMemory(SizeOf(IHM))
+	
+	MainPath=Preference_GetPreference(*System\Prefs,"GENERAL","MainPath")
+	CompilerIf #PB_Compiler_OS=#PB_OS_Windows
+	If Not InitScintilla("Scintilla.dll")
+	SystemEnd(*System)
+	EndIf
+	CompilerEndIf
+	*this\Image[#ImageIcon_Option]=LoadImage(#PB_Any,MainPath+"images"+"/"+"vcard_edit.png")
+	*this\Image[#ImageIcon_CloseProject]=LoadImage(#PB_Any,MainPath+"images"+"/"+"cancel.png")
+	*this\Image[#ImageIcon_Build]=LoadImage(#PB_Any,MainPath+"images"+"/"+"bricks.png")
+	*this\Image[#ImageIcon_Directory]=LoadImage(#PB_Any,MainPath+"images"+"/"+"folder.png")
+	*this\Image[#ImageIcon_FileTree]=LoadImage(#PB_Any,MainPath+"images"+"/"+"page_white_text.png")
+	Flag=#PB_Window_MinimizeGadget|#PB_Window_MaximizeGadget|#PB_Window_Maximize|#PB_Window_Invisible|#PB_Window_SystemMenu|#PB_Window_ScreenCentered|#PB_Window_SizeGadget
+	*this\Window[#WIN_Main]=OpenWindow(#PB_Any,0,0,800,600,Title,Flag)
+	If *this\Window[#WIN_Main]
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_Control|#PB_Shortcut_N,#new)
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_Control|#PB_Shortcut_P,#NewProject)
+	CompilerIf #PB_Compiler_OS=#PB_OS_Windows
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_Tab,#TabOnly)
+	CompilerEndIf
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_Control|#PB_Shortcut_W,#close)
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_Control|#PB_Shortcut_S,#save)
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_Control|#PB_Shortcut_O,#open)
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_Control|#PB_Shortcut_F,#search)
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_Control|#PB_Shortcut_Q,#quit)
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_Control|#PB_Shortcut_I,#AutoIndent)
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_F6,#CompilerProject)
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_F5,#compiler)
+	AddKeyboardShortcut(*this\Window[0],#PB_Shortcut_F9,#SwitchStructure)
+	*this\menu[#Menu_ProjectFile]=CreatePopupMenu(#PB_Any)
+	If *this\menu[#Menu_ProjectFile]
+	MenuItem(#RemoveFile,GetText("ProjectMenu-DeleteFile"))
+	EndIf
+	*this\menu[#Menu_ProjectDirectory]=CreatePopupMenu(#PB_Any)
+	If *this\menu[#Menu_ProjectDirectory]
+	MenuItem(#RemoveDirectory,GetText("ProjectMenu-DeleteDirectory"))
+	OpenSubMenu(GetText("ProjectMenu-AddFile"))
+	MenuItem(#AddEmptyFile,GetText("ProjectMenu-AddEmptyFile"))
+	MenuItem(#AddFileFromFile,GetText("ProjectMenu-AddFileFromFile"))
+	EndIf
+	*this\menu[#Menu_Main]=CreateMenu(#PB_Any,WindowID(*this\Window[#WIN_Main]))
+	If *this\menu[#Menu_Main]
+	MenuTitle(GetText("GeneralMenu-File"))
+	OpenSubMenu(GetText("GeneralMenu-New"))
+	MenuItem(#New,GetText("GeneralMenu-NewSource")+Chr(9)+"Ctrl+N")
+	MenuItem(#NewProject,GetText("GeneralMenu-NewProject")+Chr(9)+"Ctrl+P")
+	CloseSubMenu()
+	MenuItem(#Open,GetText("GeneralMenu-Open")+Chr(9)+"Ctrl+O")
+	MenuItem(#Save,GetText("GeneralMenu-Save")+Chr(9)+"Ctrl+S")
+	MenuItem(#Close,GetText("GeneralMenu-Close")+Chr(9)+"Ctrl+W")
+	MenuBar()
+	MenuItem(#Option,GetText("GeneralMenu-Options"))
+	MenuBar()
+	OpenSubMenu(GetText("GeneralMenu-History"))
+	temp=Preference_GetPreference(*system\Prefs,"GENERAL","History")
+	If Len(temp)
+	If FindString(temp,";",1)=0
+	MenuItem(#PB_Any,temp)
+	Else
+	For n=1 To CountString(temp,";")+1
+	MenuItem(#PB_Any,StringField(temp,n,";"))
+	Next n
+	EndIf
+	EndIf
+	CloseSubMenu()
+	MenuBar()
+	MenuItem(#Quit,GetText("GeneralMenu-Quit")+Chr(9)+"Ctrl+Q")
+	MenuTitle(GetText("GeneralMenu-Edit"))
+	MenuItem(#AutoIndent,GetText("GeneralMenu-AutoIndent")+Chr(9)+"Ctrl+I")
+	MenuBar()
+	MenuItem(#Undo,GetText("GeneralMenu-Undo")+Chr(9)+"Ctrl+Z")
+	MenuItem(#Redo,GetText("GeneralMenu-Redo")+Chr(9)+"Ctrl+Y")
+	DisableMenuItem(*this\menu[0],#undo,1)
+	DisableMenuItem(*this\menu[0],#redo,1)
+	MenuBar()
+	MenuBar()
+	MenuTitle(GetText("GeneralMenu-Compiler"))
+	MenuItem(#Compiler,GetText("GeneralMenu-CompilerFile")+Chr(9)+"F5")
+	MenuItem(#CompilerProject,GetText("GeneralMenu-CompilerProject")+Chr(9)+"F6")
+	MenuItem(#SwitchStructure,GetText("GeneralMenu-SwitchStructure")+Chr(9)+"F9")
+	MenuItem(#CompilerOptions,GetText("GeneralMenu-CompileOption"))
+	MenuItem(#BuildCurrentFile,GetText("GeneralMenu-BuildFile"))
+	If Preference_GetPreference(*system\Prefs,"GENERAL","structure")="X64" And FileSize(Preference_GetPreference(*system\Prefs,"X64","Compiler Path")+#PB_CompilerName)>0
+	If FileSize(Preference_GetPreference(*system\Prefs,"X86","Compiler Path")+#PB_CompilerName)<0
+	DisableMenuItem(*this\menu[0],#SwitchStructure,1)
+	EndIf
+	ElseIf FileSize(Preference_GetPreference(*system\Prefs,"X86","Compiler Path")+#PB_CompilerName)>0
+	If FileSize(Preference_GetPreference(*system\Prefs,"X64","Compiler Path")+#PB_CompilerName)<0
+	DisableMenuItem(*this\menu[0],#SwitchStructure,1)
+	EndIf
+	Else
+	DisableMenuItem(*this\menu[0],#Compiler,1)
+	DisableMenuItem(*this\menu[0],#CompilerProject,1)
+	EndIf
+	EndIf
+	*this\ToolBar[0]=CreateToolBar(#PB_Any,WindowID(*this\Window[0]))
+	If *this\ToolBar[0]
+	ToolBarStandardButton(#new,#PB_ToolBarIcon_New)
+	ToolBarStandardButton(#open,#PB_ToolBarIcon_Open)
+	ToolBarStandardButton(#save,#PB_ToolBarIcon_Save)
+	ToolBarStandardButton(#close,#PB_ToolBarIcon_Delete)
+	ToolBarSeparator()
+	ToolBarStandardButton(#search,#PB_ToolBarIcon_Find)
+	ToolBarSeparator()
+	ToolBarStandardButton(#undo,#PB_ToolBarIcon_Undo)
+	ToolBarStandardButton(#redo,#PB_ToolBarIcon_Redo)
+	EndIf
+	*this\StatusBar[0]=CreateStatusBar(#PB_Any,WindowID(*this\Window[0]))
+	If *this\StatusBar[0]
+	AddStatusBarField(200)
+	AddStatusBarField(#PB_Ignore)
+	Else
+	SystemEnd(*System)
+	EndIf
+	If UseGadgetList(WindowID(*this\Window[#WIN_Main]))
+	*this\Gadget[#gd_FirstPanel]=PanelGadget(#PB_Any,0,0,0,0)
+	CloseGadgetList()
+	UseGadgetList(WindowID(*this\Window[#WIN_Main]))
+	*this\Gadget[#gd_SecondPanel]=EditorGadget(#PB_Any,0,0,0,0,#PB_String_ReadOnly)
+	UseGadgetList(WindowID(*this\Window[#WIN_Main]))
+	*this\Gadget[#gd_MainPanel]=PanelGadget(#PB_Any,0,0,0,0)
+	EnableGadgetDrop(*this\Gadget[#gd_MainPanel],#PB_Drop_Files,#PB_Drag_Copy)
+	AddGadgetItem(*this\Gadget[#gd_FirstPanel],-1,GetText("MainWindow-Explorer"))
+	*this\Gadget[#gd_Explorer]=ExplorerTreeGadget(#PB_Any,0,0,0,0,"*.pb;*.pbi;*.chp")
+	CloseGadgetList()
+	EndIf
+	*this\Window[#WIN_OptionCompilation]=OpenWindow(#PB_Any,0,0,400,230,GetText("OptionCompilation-Window"),#PB_Window_Invisible|#PB_Window_SystemMenu|#PB_Window_ScreenCentered,WindowID(*this\Window[0]))
+	If *this\Window[#WIN_OptionCompilation]
+	If UseGadgetList(WindowID(*this\Window[#WIN_OptionCompilation]))
+	*this\Gadget[#GD_CancelSetCompilerOption]=ButtonGadget(#PB_Any,210,190,180,30,GetText("Misc-Cancel"))
+	*this\Gadget[#GD_ConfirmSetCompilerOption]=ButtonGadget(#PB_Any,20,190,180,30,GetText("Misc-Confim"))
+	*this\Gadget[#GD_EnableASM]=CheckBoxGadget(#PB_Any,20,20,360,20,GetText("OptionCompilation-ASM"))
+	*this\Gadget[#GD_EnableUnicode]=CheckBoxGadget(#PB_Any,20,40,360,20,GetText("OptionCompilation-Unicode"))
+	*this\Gadget[#GD_EnableSafeThread]=CheckBoxGadget(#PB_Any,20,60,360,20,GetText("OptionCompilation-SafeThread"))
+	*this\Gadget[#GD_EnableOnError]=CheckBoxGadget(#PB_Any,20,80,360,20,GetText("OptionCompilation-OnError"))
+	*this\Gadget[#GD_EnableXPSkin]=CheckBoxGadget(#PB_Any,20,100,360,20,GetText("OptionCompilation-XPSkin"))
+	*this\Gadget[#GD_EnableAdministratorMode]=CheckBoxGadget(#PB_Any,20,120,360,20,GetText("OptionCompilation-Administrator"))
+	*this\Gadget[#GD_EnableUserMode]=CheckBoxGadget(#PB_Any,20,140,360,20,GetText("OptionCompilation-UserMode"))
+	*this\Gadget[#GD_EnablePrecompiler]=CheckBoxGadget(#PB_Any,20,160,360,20,GetText("OptionCompilation-Precompiler"))
+	EndIf
+	Else
+	Debug "erreur"
+	SystemEnd(*System)
+	EndIf
+	*this\Window[#WIN_Search]=OpenWindow(#PB_Any,0,0,425,90,GetText("FindWindow-Find"),#PB_Window_Invisible|#PB_Window_SystemMenu|#PB_Window_ScreenCentered,WindowID(*this\Window[0]))
+	If *this\Window[#WIN_Search]
+	If UseGadgetList(WindowID(*this\Window[1]))
+	*this\Gadget[#GD_SearchString]=StringGadget(#PB_Any,120,1,300,25,"")
+	TextGadget(#PB_Any,1,1,100,40,GetText("FindWindow-Find"))
+	*this\Gadget[#GD_SearchReplaceString]=StringGadget(#PB_Any,120,30,300,25,"")
+	TextGadget(#PB_Any,1,30,100,40,GetText("FindWindow-ReplaceBy"))
+	*this\Gadget[#GD_SearchNext]=ButtonGadget(#PB_Any,10,60,125,25,GetText("FindWindow-FindNext"))
+	*this\Gadget[#GD_SearchReplace]=ButtonGadget(#PB_Any,150,60,125,25,GetText("FindWindow-Replace"))
+	*this\Gadget[#GD_SearchReplaceAll]=ButtonGadget(#PB_Any,290,60,125,25,GetText("FindWindow-ReplaceAll"))
+	EndIf
+	Else
+	Debug "erreur"
+	SystemEnd(*System)
+	EndIf
+	*this\Window[#WIN_NewProject]=OpenWindow(#PB_Any,0,0,500,200,GetText("NewProjectWindow-New"),#PB_Window_Invisible|#PB_Window_SystemMenu|#PB_Window_ScreenCentered,WindowID(*this\Window[0]))
+	If *this\Window[#WIN_NewProject]
+	If UseGadgetList(WindowID(*this\Window[#WIN_NewProject]))
+	*this\Gadget[#GD_TreeTemplate]=TreeGadget(#PB_Any,0,0,200,200,#PB_Tree_NoLines|#PB_Tree_AlwaysShowSelection)
+	TextGadget(#PB_Any,203,3,200,20,GetText("NewProjectWindow-Name"))
+	*this\Gadget[#GD_NameNewProject]=StringGadget(#PB_Any,301,1,198,20,"")
+	TextGadget(#PB_Any,203,23,200,20,GetText("NewProjectWindow-Directory"))
+	*this\Gadget[#GD_PathNewProject]=StringGadget(#PB_Any,301,21,198,20,"")
+	*this\Gadget[#GD_SetPathNewProject]=ButtonGadget(#PB_Any,300,50,80,30,GetText("NewProjectWindow-Browse"))
+	*this\Gadget[#GD_CreateNewProject]=ButtonGadget(#PB_Any,250,165,80,30,GetText("NewProjectWindow-Create"))
+	*this\Gadget[#GD_CancelNewProject]=ButtonGadget(#PB_Any,350,165,80,30,GetText("NewProjectWindow-Cancel"))
+	EndIf
+	Else
+	Debug "erreur"
+	SystemEnd(*System)
+	EndIf
+	*this\Window[#WIN_OptionProject]=OpenWindow(#PB_Any,0,0,600,400,GetText("AddCompiler-Title"),#PB_Window_Invisible|#PB_Window_ScreenCentered,WindowID(*this\Window[0]))
+	If *this\Window[#WIN_OptionProject]
+	If UseGadgetList(WindowID(*this\Window[#WIN_OptionProject]))
+	*this\Gadget[#GD_CancelProjectOption]=ButtonGadget(#PB_Any,320,360,180,30,GetText("Misc-Cancel"))
+	*this\Gadget[#GD_ConfirmProjectOption]=ButtonGadget(#PB_Any,90,360,180,30,GetText("Misc-Confim"))
+	*this\Gadget[#GD_EnableProjectASM]=CheckBoxGadget(#PB_Any,20,20,360,20,GetText("OptionCompilation-ASM"))
+	*this\Gadget[#GD_EnableProjectUnicode]=CheckBoxGadget(#PB_Any,20,40,360,20,GetText("OptionCompilation-Unicode"))
+	*this\Gadget[#GD_EnableProjectSafeThread]=CheckBoxGadget(#PB_Any,20,60,360,20,GetText("OptionCompilation-SafeThread"))
+	*this\Gadget[#GD_EnableProjectOnError]=CheckBoxGadget(#PB_Any,20,80,360,20,GetText("OptionCompilation-OnError"))
+	*this\Gadget[#GD_EnableProjectXPSkin]=CheckBoxGadget(#PB_Any,20,100,360,20,GetText("OptionCompilation-XPSkin"))
+	*this\Gadget[#GD_EnableProjectAdministratorMode]=CheckBoxGadget(#PB_Any,20,120,360,20,GetText("OptionCompilation-Administrator"))
+	*this\Gadget[#GD_EnableProjectUserMode]=CheckBoxGadget(#PB_Any,20,140,360,20,GetText("OptionCompilation-UserMode"))
+	*this\Gadget[#GD_EnableProjectPrecompiler]=CheckBoxGadget(#PB_Any,20,160,360,20,GetText("OptionCompilation-Precompiler"))
+	TextGadget(#PB_Any,20,180,100,20,"Type :")
+	*this\Gadget[#GD_ProjectTypeList]=ComboBoxGadget(#PB_Any,100,180,100,2)
+	AddGadgetItem(*this\Gadget[#GD_ProjectTypeList],0,"Application")
+	AddGadgetItem(*this\Gadget[#GD_ProjectTypeList],1,"Static library")
+	AddGadgetItem(*this\Gadget[#GD_ProjectTypeList],2,"Dynamic library")
+	EndIf
+	Else
+	Debug "erreur"
+	SystemEnd(*System)
+	EndIf
+	*this\Window[#WIN_Option]=OpenWindow(#PB_Any,0,0,600,400,GetText("AddCompiler-Title"),#PB_Window_Invisible|#PB_Window_ScreenCentered,WindowID(*this\Window[0]))
+	If *this\Window[#WIN_Option]
+	If UseGadgetList(WindowID(*this\Window[#WIN_Option]))
+	*this\Gadget[#GD_TreeOption]=TreeGadget(#PB_Any,10,10,150,380)
+	AddGadgetItem(*this\Gadget[#GD_TreeOption],-1,"General",0,0)
+	AddGadgetItem(*this\Gadget[#GD_TreeOption],-1,"Language",0,1)
+	AddGadgetItem(*this\Gadget[#GD_TreeOption],-1,"Editor",0,0)
+	AddGadgetItem(*this\Gadget[#GD_TreeOption],-1,"Color",0,1)
+	AddGadgetItem(*this\Gadget[#GD_TreeOption],-1,"Compiler",0,0)
+	AddGadgetItem(*this\Gadget[#GD_TreeOption],-1,"Path",0,1)
+	*this\Gadget[#GD_FrameLanguage]=Frame3DGadget(#PB_Any,170,10,420,55,"Language")
+	*this\Gadget[#GD_ListLanguage]=ComboBoxGadget(#PB_Any,175,30,400,25)
+	For n=1 To Preference_CountGroup(*Lang)
+	*Group=Preference_GetGroupNumber(*Lang,n)
+	AddGadgetItem(*this\Gadget[#GD_ListLanguage],-1,*Group\Name)
+	Next n
+	ColorText(0)="Text"+Chr(9)
+	ColorText(1)="KeyWord "
+	ColorText(2)="Function"
+	ColorText(3)="Constant"
+	ColorText(4)="String"+Chr(9)
+	ColorText(5)="Operator"
+	ColorText(6)="Comment "
+	*this\Gadget[#GD_FrameColor]=Frame3DGadget(#PB_Any,170,10,420,300,"Color")
+	For n=#ImageColor_Text To #ImageColor_Comment
+	*this\Image[n]=CreateImage(#PB_Any,100,20)
+	If StartDrawing(ImageOutput(*this\Image[n]))
+	Box(0,0,100,20,RGB(255,255,255))
+	StopDrawing()
+	EndIf
+	Next n
+	i=#GD_ImageColor_Text
+	For n=#GD_TextColor_Text To #GD_TextColor_Comment
+	*this\Gadget[n]=TextGadget(#PB_Any,180,25+20*(n-#GD_TextColor_Text),200,20,ColorText(n-#GD_TextColor_Text)+Chr(9)+":")
+	*this\Gadget[i]=ButtonImageGadget(#PB_Any,520,25+20*(n-#GD_TextColor_Text),50,20,ImageID(*this\Image[n-#GD_TextColor_Text]))
+	i+1
+	Next n
+	*this\Gadget[#GD_FramePath]=Frame3DGadget(#PB_Any,170,10,420,75,"Path")
+	*this\Gadget[#GD_X86Path_Text]=TextGadget(#PB_Any,175,25,150,20,"X86 Compiler Path :")
+	*this\Gadget[#GD_X64Path_Text]=TextGadget(#PB_Any,175,55,150,20,"X64 Compiler Path :")
+	*this\Gadget[#GD_X86Path]=StringGadget(#PB_Any,330,25,150,20,Preference_GetPreference(*system\Prefs,"X86","Compiler Path"),#PB_String_ReadOnly)
+	*this\Gadget[#GD_X64Path]=StringGadget(#PB_Any,330,55,150,20,Preference_GetPreference(*system\Prefs,"X86","Compiler Path"),#PB_String_ReadOnly)
+	*this\Gadget[#GD_X86Path_Select]=ButtonGadget(#PB_Any,490,25,80,25,GetText("Misc-Browse"))
+	*this\Gadget[#GD_X64Path_Select]=ButtonGadget(#PB_Any,490,50,80,25,GetText("Misc-Browse"))
+	*this\Gadget[#GD_OptionConfirm]=ButtonGadget(#PB_Any,330,WindowHeight(*this\Window[#WIN_Option])-40,80,30,GetText("Commons-Confirm"))
+	*this\Gadget[#GD_OptionCancel]=ButtonGadget(#PB_Any,420,WindowHeight(*this\Window[#WIN_Option])-40,80,30,GetText("Commons-Cancel"))
+	*this\Gadget[#GD_OptionDone]=ButtonGadget(#PB_Any,510,WindowHeight(*this\Window[#WIN_Option])-40,80,30,GetText("Commons-Apply"))
+	EndIf
+	Else
+	Debug "erreur"
+	SystemEnd(*System)
+	EndIf
+	Else
+	MessageRequester("YAPI",GetText("NewProjectWindow-Error"))
+	SystemEnd(*System)
+	EndIf
+	ProcedureReturn *this
+EndProcedure
+Procedure.i SetStatusBarText(*this.IHM,Champ.i,txt.s)
+	If champ=0
+	StatusBarText(*this\StatusBar[0],Champ,txt,#PB_StatusBar_Center)
+	Else
+	StatusBarText(*this\StatusBar[0],Champ,txt)
+	EndIf
+EndProcedure
+Procedure.i NewScintillaGadget(*this.IHM,PanelName.s)
+Protected *ptr.i
+	AddGadgetItem(*this\Gadget[#gd_MainPanel],CountGadgetItems(*this\Gadget[#gd_MainPanel]),PanelName)
+	*ptr=ScintillaGadget(#PB_Any,0,0,GetGadgetAttribute(*this\Gadget[#gd_MainPanel],#PB_Panel_ItemWidth),GetGadgetAttribute(*this\Gadget[#gd_MainPanel],#PB_Panel_ItemHeight),@ScintillaCallBack())
+	ScintillaSendMessage(*ptr,#SCI_SETCARETLINEBACK,$00FFFF)
+	ScintillaSendMessage(*ptr,#SCI_SETCARETLINEVISIBLE,#True)
+	ScintillaSendMessage(*ptr,#SCI_STYLESETFORE,#LexerState_Comment,Val(Preference_GetPreference(*system\Prefs,"Color","Comment")))
+	ScintillaSendMessage(*ptr,#SCI_STYLESETITALIC,#LexerState_Comment,1)
+	ScintillaSendMessage(*ptr,#SCI_STYLESETFORE,#LexerState_NonKeyword,0)
+	ScintillaSendMessage(*ptr,#SCI_STYLESETFORE,#LexerState_Keyword,Val(Preference_GetPreference(*system\Prefs,"Color","KeyWord")))
+	ScintillaSendMessage(*ptr,#SCI_STYLESETBOLD,#LexerState_Keyword,#True)
+	ScintillaSendMessage(*ptr,#SCI_STYLESETFORE,#LexerState_Constant,Val(Preference_GetPreference(*system\Prefs,"Color","Constant")))
+	ScintillaSendMessage(*ptr,#SCI_STYLESETFORE,#LexerState_String,Val(Preference_GetPreference(*system\Prefs,"Color","String")))
+	ScintillaSendMessage(*ptr,#SCI_STYLESETFORE,#LexerState_Function,Val(Preference_GetPreference(*system\Prefs,"Color","Function")))
+	ScintillaSendMessage(*ptr,#SCI_STYLESETFORE,#LexerState_Operator,Val(Preference_GetPreference(*system\Prefs,"Color","Operator")))
+	ScintillaSendMessage(*ptr,#SCI_SETMARGINTYPEN,0,#SC_MARGIN_NUMBER)
+	ScintillaSendMessage(*ptr,#SCI_SETMARGINMASKN,2,#SC_MASK_FOLDERS)
+	ScintillaSendMessage(*ptr,#SCI_SETMARGINWIDTHN,1,5)
+	ScintillaSendMessage(*ptr,#SCI_SETMARGINWIDTHN,2,15)
+	ScintillaSendMessage(*ptr,#SCI_SETMARGINSENSITIVEN,2,#True)
+	ScintillaSendMessage(*ptr,#SCI_MARKERDEFINE,#SC_MARKNUM_FOLDEROPEN,#SC_MARK_BOXMINUS)
+	ScintillaSendMessage(*ptr,#SCI_MARKERDEFINE,#SC_MARKNUM_FOLDER,#SC_MARK_BOXPLUS)
+	ScintillaSendMessage(*ptr,#SCI_MARKERDEFINE,#SC_MARKNUM_FOLDERSUB,#SC_MARK_VLINE)
+	ScintillaSendMessage(*ptr,#SCI_MARKERDEFINE,#SC_MARKNUM_FOLDERTAIL,#SC_MARK_LCORNERCURVE)
+	ScintillaSendMessage(*ptr,#SCI_MARKERDEFINE,#SC_MARKNUM_FOLDEREND,#SC_MARK_BOXPLUS)
+	ScintillaSendMessage(*ptr,#SCI_MARKERDEFINE,#SC_MARKNUM_FOLDEROPENMID,#SC_MARK_BOXMINUS)
+	ScintillaSendMessage(*ptr,#SCI_MARKERDEFINE,#SC_MARKNUM_FOLDERMIDTAIL,#SC_MARK_TCORNERCURVE)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETFORE,#SC_MARKNUM_FOLDEROPEN,$FFFFFF)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETBACK,#SC_MARKNUM_FOLDEROPEN,0)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETFORE,#SC_MARKNUM_FOLDER,$FFFFFF)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETBACK,#SC_MARKNUM_FOLDER,0)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETFORE,#SC_MARKNUM_FOLDERSUB,$FFFFFF)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETBACK,#SC_MARKNUM_FOLDERSUB,0)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETFORE,#SC_MARKNUM_FOLDERTAIL,$FFFFFF)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETBACK,#SC_MARKNUM_FOLDERTAIL,0)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETFORE,#SC_MARKNUM_FOLDEREND,$FFFFFF)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETBACK,#SC_MARKNUM_FOLDEREND,0)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETFORE,#SC_MARKNUM_FOLDEROPENMID,$FFFFFF)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETBACK,#SC_MARKNUM_FOLDEROPENMID,0)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETFORE,#SC_MARKNUM_FOLDERMIDTAIL,$FFFFFF)
+	ScintillaSendMessage(*ptr,#SCI_MARKERSETBACK,#SC_MARKNUM_FOLDERMIDTAIL,0)
+	ScintillaSendMessage(*ptr,#SCI_AUTOCSETIGNORECASE,#True)
+	ScintillaSendMessage(*ptr,#SCI_SETTABINDENTS,#True)
+	ScintillaSendMessage(*ptr,#SCI_SETBACKSPACEUNINDENTS,#True)
+	ScintillaSendMessage(*ptr,#SCI_SETINDENT,0)
+	ScintillaSendMessage(*ptr,#SCI_SETUSETABS,#True)
+	ScintillaSendMessage(*ptr,#SCI_SETTABWIDTH,4)
+	ScintillaSendMessage(*ptr,#SCI_SETEOLMODE,#SC_EOL_LF)
+	SCI_SetIndentationGuides(*ptr,1)
+	SetGadgetState(*this\Gadget[#gd_MainPanel],CountGadgetItems(*this\Gadget[#gd_MainPanel])-1)
+	ProcedureReturn *Ptr
+EndProcedure
+Procedure.i IHM_SetCurrentOption(*this.IHM,Option.i)
+Protected n.i
+Protected txt.s
+	For n=#GD_FrameLanguage To #GD_X64Path_Select
+	HideGadget(*this\Gadget[n],1)
+	Next n
+	Select Option
+	Case #OptionLang
+	For n=#GD_FrameLanguage To #GD_ListLanguage
+	HideGadget(*this\Gadget[n],0)
+	Next n
+	Case #OptionColor
+	For n=#ImageColor_Text To #ImageColor_Comment
+	If StartDrawing(ImageOutput(*this\Image[n]))
+	Select n
+	Case #ImageColor_Text
+	txt="Text"
+	Case #ImageColor_KeyWord
+	txt="KeyWord"
+	Case #ImageColor_Function
+	txt="Function"
+	Case #ImageColor_Constant
+	txt="Constant"
+	Case #ImageColor_String
+	txt="String"
+	Case #ImageColor_Operator
+	txt="Operator"
+	Case #ImageColor_Comment
+	txt="Comment"
+	EndSelect
+	Box(0,0,100,20,Val(Preference_GetPreference(*system\Prefs,"Color",txt)))
+	StopDrawing()
+	EndIf
+	Next n
+	For n=#GD_FrameColor To #GD_ImageColor_Comment
+	If IsGadget(*this\Gadget[n])
+	HideGadget(*this\Gadget[n],0)
+	EndIf
+	Next n
+	Case #OptionCompiler
+	SetGadgetText(*this\Gadget[#GD_X86Path],Preference_GetPreference(*system\Prefs,"X86","Compiler Path"))
+	SetGadgetText(*this\Gadget[#GD_X64Path],Preference_GetPreference(*system\Prefs,"X64","Compiler Path"))
+	For n=#GD_FramePath To #GD_X64Path_Select
+	If IsGadget(*this\Gadget[n])
+	HideGadget(*this\Gadget[n],0)
+	EndIf
+	Next n
+	EndSelect
+EndProcedure
+Procedure.i ShowWindow(*this.IHM,numero.i)
+Protected n.i
+Protected *Project.Project
+	Select numero
+	Case #WIN_OptionProject
+	*Project=GetCurrentProject(*System)
+	Select GetMode(*Project)
+	Case #ProjectIsApp
+	SetGadgetState(*this\Gadget[#GD_ProjectTypeList],0)
+	Case #ProjectIsDynamicLib
+	SetGadgetState(*this\Gadget[#GD_ProjectTypeList],2)
+	Case #ProjectIsStaticLib
+	SetGadgetState(*this\Gadget[#GD_ProjectTypeList],1)
+	EndSelect
+	SetGadgetState(*this\Gadget[#GD_EnableProjectSafeThread],*System\OpenProject\Options\SafeThread)
+	SetGadgetState(*this\Gadget[#GD_EnableProjectUnicode],*System\OpenProject\Options\Unicode)
+	SetGadgetState(*this\Gadget[#GD_EnableProjectASM],*System\OpenProject\Options\ASM)
+	SetGadgetState(*this\Gadget[#GD_EnableProjectOnError],*System\OpenProject\Options\OnError)
+	SetGadgetState(*this\Gadget[#GD_EnableProjectXPSkin],*System\OpenProject\Options\ThemesXP)
+	SetGadgetState(*this\Gadget[#GD_EnableProjectAdministratorMode],*System\OpenProject\Options\AdminMode)
+	SetGadgetState(*this\Gadget[#GD_EnableProjectUserMode],*System\OpenProject\Options\UserMode)
+	SetGadgetState(*this\Gadget[#GD_EnableProjectPrecompiler],*System\OpenProject\Options\Precompilation)
+	DisableWindow(*this\Window[#WIN_Main],1)
+	Case #WIN_OptionCompilation
+	CompilerIf #PB_Compiler_OS=#PB_OS_Linux
+	DisableGadget(*this\Gadget[#GD_EnableXPSkin],1)
+	DisableGadget(*this\Gadget[#GD_EnableAdministratorMode],1)
+	DisableGadget(*this\Gadget[#GD_EnableUserMode],1)
+	CompilerEndIf
+	If Preference_GetPreference(*System\Prefs,"Compiler Options","ASM")="1"
+	SetGadgetState(*this\Gadget[#GD_EnableASM],1)
+	EndIf
+	If Preference_GetPreference(*System\Prefs,"Compiler Options","Unicode")="1"
+	SetGadgetState(*this\Gadget[#GD_EnableUnicode],1)
+	EndIf
+	If Preference_GetPreference(*System\Prefs,"Compiler Options","SafeThread")="1"
+	SetGadgetState(*this\Gadget[#GD_EnableSafeThread],1)
+	EndIf
+	If Preference_GetPreference(*System\Prefs,"Compiler Options","OnError")="1"
+	SetGadgetState(*this\Gadget[#GD_EnableOnError],1)
+	EndIf
+	If Preference_GetPreference(*System\Prefs,"Compiler Options","XPSkin")="1"
+	SetGadgetState(*this\Gadget[#GD_EnableXPSkin],1)
+	EndIf
+	If Preference_GetPreference(*System\Prefs,"Compiler Options","AdministratorMode")="1"
+	SetGadgetState(*this\Gadget[#GD_EnableAdministratorMode],1)
+	EndIf
+	If Preference_GetPreference(*System\Prefs,"Compiler Options","UserMode")="1"
+	SetGadgetState(*this\Gadget[#GD_EnableUserMode],1)
+	EndIf
+	If Preference_GetPreference(*System\Prefs,"Compiler Options","Precompiler")="1"
+	SetGadgetState(*this\Gadget[#GD_EnablePrecompiler],1)
+	EndIf
+	DisableWindow(*this\Window[#WIN_Main],1)
+	Case #WIN_Option
+	DisableWindow(*this\Window[#WIN_Main],1)
+	DisableGadget(*this\Gadget[#GD_OptionDone],1)
+	For n=0 To CountGadgetItems(*this\Gadget[#GD_ListLanguage])-1
+	If GetGadgetItemText(*this\Gadget[#GD_ListLanguage],n)=Preference_GetPreference(*system\Prefs,"GENERAL","Lang")
+	SetGadgetState(*this\Gadget[#GD_ListLanguage],n)
+	Break
+	EndIf
+	Next n
+	IHM_SetCurrentOption(*this,#OptionLang)
+	Case #WIN_NewProject
+	SetGadgetState(*this\Gadget[#GD_TreeTemplate],0)
+	DisableWindow(*this\Window[#WIN_Main],1)
+	EndSelect
+	HideWindow(*this\Window[numero],0)
+EndProcedure
+Procedure.i IHM_HideWindow(*this.IHM,numero.i)
+	Select numero
+	Case #WIN_NewProject,#WIN_Option,#WIN_OptionCompilation,#WIN_OptionProject
+	DisableWindow(*this\Window[#WIN_Main],0)
+	EndSelect
+	HideWindow(*this\Window[numero],1)
+EndProcedure
+Procedure.i GetGadget(*this.IHM,numero.i)
+	ProcedureReturn *this\Gadget[numero]
+EndProcedure
+Procedure.i GetWindow(*this.IHM,numero.i)
+	ProcedureReturn *this\Window[numero]
+EndProcedure
+Procedure.i IHM_AddTemplate(*this.IHM,*Template.Template)
+	AddGadgetItem(*this\Gadget[#GD_TreeTemplate],-1,Template_GetName(*Template,Preference_GetPreference(*system\Prefs,"GENERAL","Lang")))
+EndProcedure
+Procedure.i ResizeWindows(*this.IHM,number.i)
+Protected HeightMax.i
+Protected WidthMax.i
+Protected n.i
+Protected *Ptr.Panel
+Protected ToolBarHeight.i
+Protected Height.i
+	Select number
+	Case #WIN_Main
+	CompilerIf #PB_Compiler_OS=#PB_OS_Windows
+	ToolBarHeight=ToolBarHeight(*this\ToolBar[0])
+	CompilerElse
+	ToolBarHeight=0
+	CompilerEndIf
+	HeightMax=WindowHeight(*this\Window[0])-MenuHeight()-StatusBarHeight(*this\StatusBar[0])-ToolBarHeight
+	WidthMax=WindowWidth(*this\Window[0])
+	ResizeGadget(*this\Gadget[#gd_FirstPanel],WidthMax-200,ToolBarHeight,200,HeightMax)
+	Height=GetGadgetAttribute(*this\Gadget[#gd_MainPanel],#PB_Panel_TabHeight)+1
+	ResizeGadget(*this\Gadget[#gd_MainPanel],0,ToolBarHeight,WidthMax-200,HeightMax-150)
+	If IsGadget(*this\Gadget[#gd_Explorer])
+	ResizeGadget(*this\Gadget[#gd_Explorer],0,0,GetGadgetAttribute(*this\Gadget[#gd_FirstPanel],#PB_Panel_ItemWidth),GetGadgetAttribute(*this\Gadget[#gd_FirstPanel],#PB_Panel_ItemHeight))
+	EndIf
+	ResizeGadget(*this\Gadget[#gd_SecondPanel],0,HeightMax-150+ToolBarHeight,WidthMax-200,150)
+	If IsGadget(*this\Gadget[#GD_TreeProject])
+	ResizeGadget(*this\Gadget[#GD_TreeProject],0,40,GetGadgetAttribute(*this\Gadget[#gd_FirstPanel],#PB_Panel_ItemWidth),GetGadgetAttribute(*this\Gadget[#gd_FirstPanel],#PB_Panel_ItemHeight)-40)
+	EndIf
+	For n=1 To CountEllement(*System\Panel)
+	*Ptr=GetEllement(*System\Panel,n)
+	ResizeGadget(*Ptr\ScintillaGadget,0,0,GetGadgetAttribute(*this\Gadget[#gd_MainPanel],#PB_Panel_ItemWidth),GetGadgetAttribute(*this\Gadget[#gd_MainPanel],#PB_Panel_ItemHeight))
+	Next n
+	EndSelect
+EndProcedure
+Procedure.i LoadFile(*this.IHM)
+Protected filename.s
+	filename=OpenFileRequester("Open a file","",ChronosFiltre,0)
+	If filename<>""
+	If LCase(GetExtensionPart(filename))="chp"
+	System_OpenProject(*System,filename)
+	UpdateOpenFile(*System,#Project,filename)
+	Else
+	UpdateOpenFile(*System,#File,filename)
+	System_AddPanel(*System,filename)
+	EndIf
+	EndIf
+EndProcedure
+Procedure.i IHM_RemovePanel(*this.IHM,Number.w)
+	RemoveGadgetItem(*this\Gadget[#gd_MainPanel],Number)
+EndProcedure
+Procedure.i IHM_SetCurrentPanel(*this.IHM,Number.w)
+	SetGadgetState(*this\Gadget[#gd_MainPanel],Number)
+EndProcedure
+Procedure.i IHM_PanelModified(*this.IHM,Number.w)
+	SetGadgetItemText(*this\Gadget[#gd_MainPanel],Number,GetGadgetItemText(*this\Gadget[#gd_MainPanel],Number)+"*")
+EndProcedure
+Procedure.i IHM_PanelSaved(*this.IHM,Number.w,Name.s)
+	SetGadgetItemText(*this\Gadget[#gd_MainPanel],Number,Name)
+EndProcedure
+Procedure.i IHM_ShowProjectTree(*this.IHM,*Project.Project)
+	AddGadgetItem(*this\Gadget[#gd_FirstPanel],1,GetText("MainWindow-Project"))
+	*this\Gadget[#GD_TreeProject]=TreeGadget(#PB_Any,0,0,0,0)
+	*this\Gadget[#GD_ProjectOption]=ButtonImageGadget(#PB_Any,25,0,25,25,ImageID(*this\Image[#ImageIcon_Option]))
+	*this\Gadget[#GD_ProjectClose]=ButtonImageGadget(#PB_Any,0,0,25,25,ImageID(*this\Image[#ImageIcon_CloseProject]))
+	*this\Gadget[#GD_ProjectBuild]=ButtonImageGadget(#PB_Any,50,0,25,25,ImageID(*this\Image[#ImageIcon_Build]))
+	GadgetToolTip(*this\Gadget[#GD_ProjectOption],"Options")
+	IHM_SetCurrentProjectTree(*this,#GD_ProjectFile)
+EndProcedure
+Procedure.i IHM_SetCurrentProjectTree(*this.IHM,gadget.i)
+Protected *Project.Project
+Protected *FileList.Directory
+Protected *File.File
+Protected n.i
+Protected *Directory.Directory
+Protected j.i
+Protected i.i
+Protected level.b
+	*Project=GetCurrentProject(*System)
+	*FileList=GetFileList(*Project)
+	
+	j=0
+	
+	AddFilesToTree(GetFileList(*Project),*this,0)
+EndProcedure
+Procedure.i IHM_CloseProject(*this.IHM)
+	RemoveGadgetItem(*this\Gadget[#gd_FirstPanel],1)
+EndProcedure
+Procedure.i IHM_OptionModified(*this.IHM)
+	DisableGadget(*this\Gadget[#GD_OptionDone],0)
+	*this\OptionModified=1
+EndProcedure
+Procedure.i IHM_EventGadget(*this.IHM,Event.i,*System.System)
+Protected Path.s
+Protected Flag.i
+Protected ID.i
+Protected Sortie.s
+Protected txt.s
+Protected Color.l
+Protected Number.l
+Protected Position.l
+Protected *Ptr.i
+Protected CompilerNo.i
+Protected k.i
+Protected *Project.Project
+Protected *File.File
+Protected n.i
+	Select Event
+	Case *this\Gadget[#GD_SearchNext]
+	If GetGadgetText(*this\Gadget[#GD_SearchString])
+	*Ptr=GetCurrentScintillaGadget(*System)
+	Position=SCI_FindString(*Ptr,GetGadgetText(*this\Gadget[#GD_SearchString]),SCI_GetPosition(*Ptr)+1)
+	If Position>=0
+	SCI_GoToPoS(*Ptr,Position)
+	SCI_SetSel(*Ptr,Position,Position+Len(GetGadgetText(*this\Gadget[#GD_SearchString])))
+	Else
+	MessageRequester("","not found")
+	EndIf
+	EndIf
+	Case *this\Gadget[#GD_ConfirmProjectOption]
+	*System\OpenProject\Options\SafeThread=GetGadgetState(*this\Gadget[#GD_EnableProjectSafeThread])
+	*System\OpenProject\Options\Unicode=GetGadgetState(*this\Gadget[#GD_EnableProjectUnicode])
+	*System\OpenProject\Options\ASM=GetGadgetState(*this\Gadget[#GD_EnableProjectASM])
+	*System\OpenProject\Options\OnError=GetGadgetState(*this\Gadget[#GD_EnableProjectOnError])
+	*System\OpenProject\Options\ThemesXP=GetGadgetState(*this\Gadget[#GD_EnableProjectXPSkin])
+	*System\OpenProject\Options\AdminMode=GetGadgetState(*this\Gadget[#GD_EnableProjectAdministratorMode])
+	*System\OpenProject\Options\UserMode=GetGadgetState(*this\Gadget[#GD_EnableProjectUserMode])
+	*System\OpenProject\Options\Precompilation=GetGadgetState(*this\Gadget[#GD_EnableProjectPrecompiler])
+	SaveProject(*System\OpenProject)
+	IHM_HideWindow(*this,#WIN_OptionProject)
+	Case *this\Gadget[#GD_CancelProjectOption]
+	IHM_HideWindow(*this,#WIN_OptionProject)
+	Case *this\Gadget[#GD_ProjectOption]
+	ShowWindow(*this,#WIN_OptionProject)
+	Case *this\Gadget[#GD_ProjectClose]
+	System_CloseProject(*System)
+	Case *this\Gadget[#GD_CancelNewProject]
+	IHM_HideWindow(*this,#WIN_NewProject)
+	Case *this\Gadget[#GD_ProjectFile]
+	IHM_SetCurrentProjectTree(*this,#GD_ProjectFile)
+	Case *this\Gadget[#GD_ProjectComment]
+	IHM_SetCurrentProjectTree(*this,#GD_ProjectComment)
+	Case *this\Gadget[#GD_ProjectClass]
+	IHM_SetCurrentProjectTree(*this,#GD_ProjectClass)
+	Case *this\Gadget[#GD_ProjectProcedure]
+	IHM_SetCurrentProjectTree(*this,#GD_ProjectProcedure)
+	Case *this\Gadget[#GD_EnableASM]
+	NewNewPref("Compiler Options","ASM",Str(GetGadgetState(Event)))
+	Case *this\Gadget[#GD_EnableUnicode]
+	NewNewPref("Compiler Options","Unicode",Str(GetGadgetState(Event)))
+	Case *this\Gadget[#GD_EnableSafeThread]
+	NewNewPref("Compiler Options","SafeThread",Str(GetGadgetState(Event)))
+	Case *this\Gadget[#GD_EnableOnError]
+	NewNewPref("Compiler Options","OnError",Str(GetGadgetState(Event)))
+	Case *this\Gadget[#GD_EnableXPSkin]
+	NewNewPref("Compiler Options","XPSkin",Str(GetGadgetState(Event)))
+	Case *this\Gadget[#GD_EnableAdministratorMode]
+	NewNewPref("Compiler Options","AdministratorMode",Str(GetGadgetState(Event)))
+	Case *this\Gadget[#GD_EnableUserMode]
+	NewNewPref("Compiler Options","UserMode",Str(GetGadgetState(Event)))
+	Case *this\Gadget[#GD_EnablePrecompiler]
+	NewNewPref("Compiler Options","Precompiler",Str(GetGadgetState(Event)))
+	Case *this\Gadget[#GD_CancelSetCompilerOption]
+	IHM_HideWindow(*this,#WIN_OptionCompilation)
+	Case *this\Gadget[#GD_ConfirmSetCompilerOption]
+	SavePreferences(*System)
+	IHM_HideWindow(*this,#WIN_OptionCompilation)
+	Case *this\Gadget[#GD_X86Path_Select]
+	Path=PathRequester("Select X86 Compilateur Path","")
+	If Path And Path<>Preference_GetPreference(*system\Prefs,"X86","Compiler Path")
+	If FileSize(Path+#PB_CompilerName)<=0
+	MessageRequester("Error","Compiler Not Found")
+	Else
+	NewNewPref("X86","Compiler Path",Path)
+	SetGadgetText(*this\Gadget[#GD_X86Path],Path)
+	EndIf
+	IHM_OptionModified(*this)
+	EndIf
+	Case *this\Gadget[#GD_X64Path_Select]
+	Path=PathRequester("Select X64 Compilateur Path","")
+	If Path And Path<>Preference_GetPreference(*system\Prefs,"X64","Compiler Path")
+	If FileSize(Path+#PB_CompilerName)<=0
+	MessageRequester("Error","Compiler Not Found")
+	Else
+	NewNewPref("X64","Compiler Path",Path)
+	SetGadgetText(*this\Gadget[#GD_X64Path],Path)
+	EndIf
+	IHM_OptionModified(*this)
+	EndIf
+	Case *this\Gadget[#GD_ListLanguage]
+	If GetGadgetText(*this\Gadget[#GD_ListLanguage])<>Preference_GetPreference(*system\Prefs,"GENERAL","Lang")
+	IHM_OptionModified(*this)
+	NewNewPref("GENERAL","Lang",GetGadgetText(*this\Gadget[#GD_ListLanguage]))
+	EndIf
+	Case *this\Gadget[#GD_ImageColor_Text]
+	SetColor("Text",Text,Preference_GetPreference(*system\Prefs,"Color","Text"))
+	Case *this\Gadget[#GD_ImageColor_KeyWord]
+	SetColor("KeyWord",KeyWord,Preference_GetPreference(*system\Prefs,"Color","KeyWord"))
+	Case *this\Gadget[#GD_ImageColor_Function]
+	SetColor("Function",Function,Preference_GetPreference(*system\Prefs,"Color","Function"))
+	Case *this\Gadget[#GD_ImageColor_Constant]
+	SetColor("Constant",Constant,Preference_GetPreference(*system\Prefs,"Color","Constant"))
+	Case *this\Gadget[#GD_ImageColor_String]
+	SetColor("String",String,Preference_GetPreference(*system\Prefs,"Color","String"))
+	Case *this\Gadget[#GD_ImageColor_Operator]
+	SetColor("Operator",Operator,Preference_GetPreference(*system\Prefs,"Color","Operator"))
+	Case *this\Gadget[#GD_ImageColor_Comment]
+	SetColor("Comment",Comment,Preference_GetPreference(*system\Prefs,"Color","Comment"))
+	Case *this\Gadget[#GD_OptionConfirm]
+	If *this\OptionModified=1
+	SavePreferences(*System)
+	Else
+	RemoveNewPreferences(*System)
+	EndIf
+	IHM_HideWindow(*this,#WIN_Option)
+	Case *this\Gadget[#GD_OptionDone]
+	SavePreferences(*System)
+	DisableGadget(*this\Gadget[#GD_OptionDone],1)
+	*this\OptionModified=0
+	Case *this\Gadget[#GD_OptionCancel]
+	IHM_HideWindow(*this,#WIN_Option)
+	RemoveNewPreferences(*System)
+	Case *this\Gadget[#gd_SetPathAddCompiler]
+	Path=PathRequester("","")
+	If Path
+	SetGadgetText(*this\Gadget[#gd_TextNewPathCompiler],Path)
+	EndIf
+	Case *this\Gadget[#gd_ConfirmAddCompiler]
+	Path=GetGadgetText(*this\Gadget[#gd_TextNewPathCompiler])
+	If FileSize(Path)=-2
+	If FileSize(Path+#PB_Compiler)>0
+	Flag=#PB_Program_Read|#PB_Program_Open|#PB_Program_Hide|#PB_Program_Write
+	ID=RunProgram(Path+#PB_Compiler,#CompilerFlagVersion,"",Flag)
+	If ProgramRunning(ID)
+	Sortie=ReadProgramString(ID)
+	EndIf
+	CloseProgram(ID)
+	If Len(Sortie)>0
+	If StringField(Sortie,0," ")<>"PureBasic"
+	Sortie=PeekS(@Sortie,-1,#PB_Ascii)
+	EndIf
+	CompilerNo=Val(Preference_GetPreference(*system\Prefs,"GENERAL","Compiler"))+1
+	
+	Preference_SetPreference(*system\Prefs,"Compiler"+Str(CompilerNo),"Version",Sortie)
+	Preference_SetPreference(*system\Prefs,"Compiler"+Str(CompilerNo),"VersionNumero",StringField(Sortie,2," "))
+	k=3
+	While Not Right(StringField(Sortie,k," "),1)=")"
+	k+1
+	Wend
+	Preference_SetPreference(*system\Prefs,"Compiler"+Str(CompilerNo),"Structure",Left(StringField(Sortie,k," "),3))
+	Preference_SetPreference(*system\Prefs,"Compiler"+Str(CompilerNo),"Path",Path)
+	Preference_SetPreference(*system\Prefs,"GENERAL","Compiler",Str(CompilerNo))
+	Preference_SavePreference(*system\Prefs)
+	IHM_HideWindow(*this,#WIN_Option)
+	ShowWindow(*this,#WIN_Main)
+	EndIf
+	Else
+	EndIf
+	Else
+	EndIf
+	Case *this\Gadget[#GD_SetPathNewProject]
+	Path=PathRequester("Select a path","")
+	If Not Path
+	ProcedureReturn
+	EndIf
+	If FileSize(Path)>-2
+	CreateDirectory(Path)
+	EndIf
+	SetGadgetText(*this\Gadget[#GD_PathNewProject],Path)
+	Case *this\Gadget[#gd_MainPanel]
+	SetCurrentPanel(*System,GetGadgetState(*this\Gadget[#gd_MainPanel])+1)
+	Case *this\Gadget[#GD_CreateNewProject]
+	If GetGadgetText(*this\Gadget[#GD_NameNewProject])="" Or GetGadgetText(*this\Gadget[#GD_NameNewProject])=""
+	MessageRequester("Error",GetText("NewProjectWindow-Error1"))
+	ProcedureReturn
+	EndIf
+	If FindString(GetGadgetText(*this\Gadget[#GD_NameNewProject]),"/",1)Or FindString(GetGadgetText(*this\Gadget[#GD_NameNewProject]),"\",1)
+	MessageRequester("Error",GetText("NewProjectWindow-Error2"))
+	ProcedureReturn
+	EndIf
+	Path=GetGadgetText(*this\Gadget[#GD_PathNewProject])+GetGadgetText(*this\Gadget[#GD_NameNewProject])+".chp"
+	If FileSize(Path)>=0
+	DeleteFile(Path)
+	EndIf
+	CreateProject(*System,GetGadgetState(*this\Gadget[#GD_TreeTemplate])+1,Path,GetGadgetText(*this\Gadget[#GD_NameNewProject]))
+	System_OpenProject(*System,Path)
+	IHM_HideWindow(*this,#WIN_NewProject)
+	Case *this\Gadget[#GD_TreeProject]
+	*Project=GetCurrentProject(*System)
+	Number=GetGadgetState(*this\Gadget[#GD_TreeProject])
+	If Number>-1
+	Select Project_FileIs(*Project,Number)
+	Case #Directory
+	Select EventType()
+	Case #PB_EventType_RightClick
+	DisplayPopupMenu(*this\menu[#Menu_ProjectDirectory],WindowID(*this\window[#WIN_Main]))
+	EndSelect
+	Default
+	Select EventType()
+	Case #PB_EventType_LeftDoubleClick
+	*File=Project_GetFile(*Project,Number)
+	System_AddPanel(*System,"",*File)
+	Case #PB_EventType_RightClick
+	DisplayPopupMenu(*this\menu[#Menu_ProjectFile],WindowID(*this\window[#WIN_Main]))
+	EndSelect
+	EndSelect
+	EndIf
+	Case *this\Gadget[#GD_TreeOption]
+	Select GetGadgetState(*this\Gadget[#GD_TreeOption])
+	Case 1
+	IHM_SetCurrentOption(*this,#OptionLang)
+	Case 3
+	IHM_SetCurrentOption(*this,#OptionColor)
+	Case 5
+	IHM_SetCurrentOption(*this,#OptionCompiler)
+	EndSelect
+	EndSelect
+EndProcedure
+Procedure.i NewDirectory(Path.s)
+Protected *this.Directory
+Protected DirID.i
+Protected File.s
+Protected Ext.s
+	*this=AllocateMemory(SizeOf(Directory))
+	*this\File=CreateArray()
+	*this\Dir=CreateArray()
+	*this\Name=StringField(Path,CountString(Path,"/"),"/")
+	DirID=ExamineDirectory(#PB_Any,Path,"*")
+	
+	If Not DirID
+	ProcedureReturn 0
+	EndIf
+	While NextDirectoryEntry(DirID)
+	Select DirectoryEntryType(DirID)
+	Case #PB_DirectoryEntry_File
+	File=Path+DirectoryEntryName(DirID)
+	Ext=LCase(GetExtensionPart(File))
+	If Ext="pb" Or Ext="pbi"
+	AddEllement(*this\File,File_LoadFile(File))
+	EndIf
+	Case #PB_DirectoryEntry_Directory
+	File=DirectoryEntryName(DirID)
+	If Not(File="." Or File=".." Or File=".svn")
+	File=Path+DirectoryEntryName(DirID)+"/"
+	AddEllement(*this\Dir,NewDirectory(File))
+	EndIf
+	EndSelect
+	Wend
+	FinishDirectory(DirID)
+	ProcedureReturn *this
+EndProcedure
+Procedure.i Directory_CountElement(*this.Directory)
+Protected Count.l
+Protected n.i
+Protected *Dir.Directory
+	Count=CountEllement(*this\File)+CountEllement(*this\Dir)
+	
+	For n=1 To CountEllement(*this\Dir)
+	*Dir=GetEllement(*this\Dir,n)
+	Count+Directory_CountElement(*Dir)
+	Next n
+	ProcedureReturn Count
+EndProcedure
+Procedure.i Directory_FileIs(*this.Directory,Number.i)
+Protected n.i
+Protected *Dir.Directory
+Protected Count.i
+	If Number=0
+	ProcedureReturn #Directory
+	EndIf
+	For n=1 To CountEllement(*this\Dir)
+	Number-1
+	If Number=0
+	ProcedureReturn #Directory
+	EndIf
+	*Dir=GetEllement(*this\Dir,n)
+	Count=Directory_CountElement(*Dir)
+	If Number<=Count
+	ProcedureReturn Directory_FileIs(*Dir,Number)
+	Else
+	Number-Count
+	EndIf
+	Next n
+	ProcedureReturn 0
+EndProcedure
+Procedure.i Directory_GetFile(*this.Directory,Number.i)
+Protected n.i
+Protected *Dir.Directory
+Protected Count.i
+	If Number=0
+	ProcedureReturn *this
+	EndIf
+	For n=1 To CountEllement(*this\Dir)
+	Number-1
+	*Dir=GetEllement(*this\Dir,n)
+	Count=Directory_CountElement(*Dir)
+	If Number<=Count
+	ProcedureReturn Directory_GetFile(*Dir,Number)
+	Else
+	Number-Count
+	EndIf
+	Next n
+	ProcedureReturn GetEllement(*this\File,Number)
+EndProcedure
+Procedure.i AddFilesToTree(*this.Directory,*IHM.IHM,Level.i)
+Protected n.i
+Protected *File.File
+	AddGadgetItem(*IHM\Gadget[#GD_TreeProject],-1,*this\Name,ImageID(*IHM\Image[#ImageIcon_Directory]),Level)
+	Level+1
+	For n=1 To CountEllement(*this\Dir)
+	AddFilesToTree(GetEllement(*this\Dir,n),*IHM,Level)
+	Next n
+	For n=1 To CountEllement(*this\File)
+	*File=GetEllement(*this\File,n)
+	AddGadgetItem(*IHM\Gadget[#GD_TreeProject],-1,GetFilePart(*File\Path),ImageID(*IHM\Image[#ImageIcon_FileTree]),Level)
+	Next n
+EndProcedure
+Procedure.i Directory_IsFile(*this.Directory,*File.i)
+Protected n.i
+	For n=1 To CountEllement(*this\File)
+	If *File=GetEllement(*this\File,n)
+	ProcedureReturn #True
+	EndIf
+	Next n
+	For n=1 To CountEllement(*this\Dir)
+	If Directory_IsFile(GetEllement(*this\Dir,n),*File)
+	ProcedureReturn #True
+	EndIf
+	Next n
+	ProcedureReturn #False
+EndProcedure
+Procedure.s Directory_GetFilePath(*this.Directory,Number.l)
+Protected n.i
+Protected *Dir.Directory
+Protected Count.i
+	If Number=0
+	ProcedureReturn *this\Name+"/"
+	EndIf
+	For n=1 To CountEllement(*this\Dir)
+	Number-1
+	*Dir=GetEllement(*this\Dir,n)
+	Count=Directory_CountElement(*Dir)
+	If Number<=Count
+	ProcedureReturn Directory_GetFilePath(*Dir,Number)
+	Else
+	Number-Count
+	EndIf
+	Next n
+	ProcedureReturn *this\Name+"/"
+EndProcedure
+Procedure.i Directory_RemoveFile(*this.Directory,Number.i)
+Protected n.i
+Protected *Dir.Directory
+Protected Count.i
+Protected *File.i
+	If Number=0
+	ProcedureReturn #Null
+	EndIf
+	For n=1 To CountEllement(*this\Dir)
+	Number-1
+	*Dir=GetEllement(*this\Dir,n)
+	Count=Directory_CountElement(*Dir)
+	If Number<=Count
+	ProcedureReturn Directory_RemoveFile(*Dir,Number)
+	Else
+	Number-Count
+	EndIf
+	Next n
+	*File=GetEllement(*this\File,Number)
+	FreeEllement(*this\File,Number)
+	ProcedureReturn *File
+EndProcedure
+Procedure.i Directory_AddFile(*this.Directory,*File.i)
+	AddEllement(*this\File,*File)
+EndProcedure
+Procedure.i NewFile()
+Protected *this.File
+	*this=AllocateMemory(SizeOf(File))
+	*this\Saved=1
+	*this\Comment=CreateArray()
+	*this\Function=CreateArray()
+	ProcedureReturn *this
+EndProcedure
+Procedure.i LoadStructure(*this.File)
+Protected n.i
+Protected text.s
+Protected position.i
+Protected temp.s
+	RemoveAll(*this\Comment)
+	RemoveAll(*this\Function)
+	For n=1 To CountString(*this\Text,#LF$)
+	text=Trim(StringField(*this\Text,n,#LF$))
+	position=FindStringNotInString(text,";-",34)
+	If position
+	AddEllement(*this\Comment,NewComment(Mid(text,position+2),n,*this\Path))
+	EndIf
+	temp=LCase(Left(text,10))
+	If temp="procedure " Or temp="procedure."
+	AddEllement(*this\Function,NewFunction(Trim(Mid(text,FindString(text," ",1))),n,*this\Path))
+	EndIf
+	Next n
+EndProcedure
+Procedure.i File_LoadFile(Path.s)
+Protected *this.File
+Protected FileID.i
+Protected DOM.i
+	Path=ReplaceString(Path,"\","/")
+	If FileSize(Path)>=0
+	*this=NewFile()
+	*this\Path=Path
+	*this\File=GetFilePart(Path)
+	FileID=OpenFile(#PB_Any,Path)
+	If FileID
+	DOM=ReadStringFormat(FileID)
+	Select DOM
+	Case #PB_Ascii,#PB_UTF8,#PB_Unicode
+	Default
+	ProcedureReturn 0
+	EndSelect
+	While Not Eof(FileID)
+	If *this\Text
+	*this\Text+#LF$
+	EndIf
+	*this\Text+Trim(ReadString(FileID,DOM))
+	Wend
+	CloseFile(FileID)
+	LoadStructure(*this)
+	Else
+	ProcedureReturn 0
+	EndIf
+	ProcedureReturn *this
+	Else
+	ProcedureReturn 0
+	EndIf
+EndProcedure
+Procedure.i saveFileIn(Gadget.i,File.s)
+Protected FileID.i
+Protected n.i
+	FileID=CreateFile(#PB_Any,File)
+	
+	TruncateFile(FileID)
+	WriteStringFormat(FileID,#PB_UTF8)
+	For n=0 To SCI_GETLINECOUNT(Gadget)-1
+	WriteStringN(FileID,SCI_GETLINE(Gadget,n),#PB_UTF8)
+	Next n
+	CloseFile(FileID)
+EndProcedure
+Procedure.i SaveFile(*this.File,Gadget.i)
+Protected Path.s
+Protected FileID.i
+Protected n.i
+	If Not *this\Path
+	Path=SaveFileRequester(GetText("Misc-SavingFile"),"","Files Sources(*.pb;*.pbi)|*.pb;*.pbi",0)
+	If Path=""
+	ProcedureReturn 0
+	EndIf
+	If Right(Path,Len(".pb"))<>".pb" And Right(Path,Len(".pbi"))<>".pbi"
+	Path+".pb"
+	EndIf
+	*this\Path=Path
+	*this\File=GetFilePart(Path)
+	EndIf
+	If FileSize(*this\Path)=-1
+	FileID=CreateFile(#PB_Any,*this\Path)
+	Else
+	FileID=OpenFile(#PB_Any,*this\Path)
+	EndIf
+	If Not FileID
+	ProcedureReturn-2
+	Else
+	TruncateFile(FileID)
+	WriteStringFormat(FileID,#PB_UTF8)
+	For n=0 To SCI_GETLINECOUNT(Gadget)-1
+	WriteStringN(FileID,SCI_GETLINE(Gadget,n),#PB_UTF8)
+	Next n
+	CloseFile(FileID)
+	*this\saved=1
+	ProcedureReturn 1
+	EndIf
+EndProcedure
+Procedure.s File_GetFunctionList(*this.File)
+Protected n.i
+Protected retour.s
+	For n=1 To CountEllement(*this\Function)
+	retour+Function_GetName(GetEllement(*this\Function,n))+"("+" "
+	Next n
+	ProcedureReturn retour
+EndProcedure
+Procedure.i FreeFile(*this.File)
+	FreeMemory(*this)
+EndProcedure
+Procedure.i NewTemplateName(Name.s,Language.s)
+Protected *this.TemplateName
+	*this=AllocateMemory(SizeOf(TemplateName))
+	*this\Name=Name
+	*this\Language=Language
+	ProcedureReturn *this
+EndProcedure
+Procedure.i NewTemplate(Path.s)
+Protected *this.Template
+Protected XML.i
+Protected *Ptr.i
+Protected n.i
+Protected *ChildNode.i
+	If FileSize(Path)<0
+	ProcedureReturn 0
+	EndIf
+	*this=AllocateMemory(SizeOf(Template))
+	*this\Path=Path
+	*this\Name=CreateArray()
+	XML=LoadXML(#PB_Any,Path,#PB_UTF8)
+	n=1
+	
+	If IsXML(XML)
+	*Ptr=MainXMLNode(XML)
+	If LCase(GetXMLNodeName(*Ptr))="template"
+	*ChildNode=ChildXMLNode(*Ptr)
+	While *ChildNode
+	Select LCase(GetXMLNodeName(*ChildNode))
+	Case "Name"
+	AddEllement(*this\Name,NewTemplateName(Trim(ReplaceString(GetXMLNodeText(*ChildNode),Chr(9)," ")),GetXMLAttribute(*ChildNode,"language")))
+	Case "Type"
+	Select LCase(Trim(ReplaceString(GetXMLNodeText(*ChildNode),Chr(9)," ")))
+	Case "application"
+	*this\mode=#ProjectIsApp
+	Case "static library"
+	*this\mode=#ProjectIsStaticLib
+	Case "dynamic library"
+	*this\mode=#ProjectIsDynamicLib
+	EndSelect
+	EndSelect
+	n+1
+	*ChildNode=ChildXMLNode(*Ptr,n)
+	Wend
+	FreeXML(XML)
+	Else
+	ProcedureReturn 0
+	EndIf
+	Else
+	ProcedureReturn 0
+	EndIf
+	ProcedureReturn *this
+EndProcedure
+Procedure.s Template_GetName(*this.Template,Language.s)
+Protected n.i
+Protected *Name.TemplateName
+	For n=1 To CountEllement(*this\Name)
+	*Name=GetEllement(*this\Name,n)
+	If LCase(*Name\Language)=LCase(Language)
+	ProcedureReturn *Name\Name
+	EndIf
+	Next n
+	ProcedureReturn "name not define"
+EndProcedure
+Procedure.i GenerateTree(*this.Template,Path.s,Destination.s)
+Protected DirID.i
+	DirID=ExamineDirectory(#PB_Any,Path,"*")
+	If Not DirID
+	ProcedureReturn 0
+	EndIf
+	While NextDirectoryEntry(DirID)
+	If Not DirectoryEntryName(DirID)="." And Not DirectoryEntryName(DirID)=".."
+	Select DirectoryEntryType(DirID)
+	Case #PB_DirectoryEntry_File
+	CopyFile(Path+DirectoryEntryName(DirID),Destination+DirectoryEntryName(DirID))
+	Case #PB_DirectoryEntry_Directory
+	CreateDirectory(Destination+DirectoryEntryName(DirID)+"/")
+	GenerateTree(*this,Path+DirectoryEntryName(DirID)+"/",Destination+DirectoryEntryName(DirID)+"/")
+	EndSelect
+	EndIf
+	Wend
+	FinishDirectory(DirID)
+EndProcedure
+Procedure.i GenerateProject(*this.Template,Path.s,Name.s)
+Protected *Project.Project
+Protected MainNode.s
+Protected SourceNode.s
+	*Project=NewProject(Path,Name)
+	*Project\Mode=*this\Mode
+	MainNode=GetPathPart(Path)+Name+"/"
+	SourceNode=GetPathPart(*this\Path)+Left(GetFilePart(*this\Path),Len(GetFilePart(*this\Path))-Len(".chtp"))+"/"
+	CreateDirectory(MainNode)
+	GenerateTree(*this,SourceNode,MainNode)
+	SaveProject(*Project)
+EndProcedure
+Procedure.i NewProject(Path.s,Name.s)
+Protected *this.Project
+	*this=AllocateMemory(SizeOf(Project))
+	*this\Name=Name
+	*this\Path=Path
+	*this\File=GetFilePart(Path)
+	*this\Files=CreateArray()
+	ProcedureReturn *this
+EndProcedure
+Procedure.i Project_IsFile(*this.Project,*file.i)
+	ProcedureReturn Directory_IsFile(*this\Files,*file)
+EndProcedure
+Procedure.i GetFileList(*this.Project)
+	ProcedureReturn *this\Files
+EndProcedure
+Procedure.i GetMode(*this.Project)
+	ProcedureReturn *this\mode
+EndProcedure
+Procedure.i OpenProject(Path.s)
+Protected *this.Project
+Protected n.i
+Protected i.i
+Protected *Ptr.i
+Protected *Child.i
+Protected XML.i
+	Path=ReplaceString(Path,"\","/")
+	*this=NewProject(Path,"")
+	n=1
+	
+	XML=LoadXML(#PB_Any,Path,#PB_UTF8)
+	If IsXML(XML)
+	*Ptr=MainXMLNode(XML)
+	*Child=ChildXMLNode(*Ptr)
+	While *Child
+	Select LCase(GetXMLNodeName(*Child))
+	Case "name"
+	*this\Name=GetXMLNodeText(*Child)
+	Case "type"
+	Select LCase(Trim(ReplaceString(GetXMLNodeText(*Child),Chr(9)," ")))
+	Case "application"
+	*this\mode=#ProjectIsApp
+	Case "static library"
+	*this\mode=#ProjectIsStaticLib
+	Case "dynamic library"
+	*this\mode=#ProjectIsDynamicLib
+	EndSelect
+	Case "option"
+	*Ptr=*Child
+	*Child=ChildXMLNode(*Ptr)
+	i=1
+	While *Child
+	Select LCase(GetXMLNodeName(*Child))
+	Case "safethread"
+	*this\Options\SafeThread=Val(GetXMLNodeText(*Child))
+	Case "unicode"
+	*this\Options\Unicode=Val(GetXMLNodeText(*Child))
+	Case "asm"
+	*this\Options\ASM=Val(GetXMLNodeText(*Child))
+	Case "onerror"
+	*this\Options\OnError=Val(GetXMLNodeText(*Child))
+	Case "themexp"
+	*this\Options\ThemesXP=Val(GetXMLNodeText(*Child))
+	Case "usermode"
+	*this\Options\UserMode=Val(GetXMLNodeText(*Child))
+	Case "adminmode"
+	*this\Options\AdminMode=Val(GetXMLNodeText(*Child))
+	Case "precompilation"
+	*this\Options\Precompilation=Val(GetXMLNodeText(*Child))
+	EndSelect
+	i+1
+	*Child=ChildXMLNode(*Ptr,i)
+	Wend
+	*Ptr=ParentXMLNode(*Ptr)
+	EndSelect
+	n+1
+	*Child=ChildXMLNode(*Ptr,n)
+	Wend
+	FreeXML(XML)
+	Else
+	ProcedureReturn 0
+	EndIf
+	*this\Files=NewDirectory(GetSourcesPath(*this))
+	ProcedureReturn *this
+EndProcedure
+Procedure.i Project_FileIs(*this.Project,Number.i)
+	ProcedureReturn Directory_FileIs(*this\Files,Number)
+EndProcedure
+Procedure.i Project_GetFile(*this.Project,Number.i)
+	ProcedureReturn Directory_GetFile(*this\Files,Number)
+EndProcedure
+Procedure.s GetCompilerParamList(*this.Project)
+Protected Param.s
+Protected Struct.l
+	CompilerIf #PB_Compiler_OS=#PB_OS_Windows
+	If *this\Options\ThemesXP
+	Param+" "+"/XP"
+	EndIf
+	If *this\Options\AdminMode
+	Param+" "+"/ADMINISTRATOR"
+	EndIf
+	If *this\Options\UserMode
+	Param+" "+"/USER"
+	EndIf
+	CompilerEndIf
+	ProcedureReturn Param
+EndProcedure
+Procedure.i Project_AddNodeOption(*Parent.i,Name.s,Value.b)
+Protected *Child.i
+	*Child=CreateXMLNode(*Parent)
+	SetXMLNodeName(*Child,Name)
+	SetXMLNodeText(*Child,Str(Value))
+EndProcedure
+Procedure.i SaveProject(*this.Project)
+Protected XML.i
+Protected *Ptr.i
+Protected *Child.i
+	XML=CreateXML(#PB_Any,#PB_UTF8)
+	
+	If FileSize(*this\Path)>=0
+	DeleteFile(*this\Path)
+	EndIf
+	If IsXML(XML)
+	*Ptr=CreateXMLNode(RootXMLNode(XML))
+	If *Ptr
+	SetXMLNodeName(*Ptr,"Project")
+	*Child=CreateXMLNode(*Ptr)
+	SetXMLNodeName(*Child,"Name")
+	SetXMLNodeText(*Child,*this\Name)
+	*Child=CreateXMLNode(*Ptr)
+	SetXMLNodeName(*Child,"Type")
+	Select *this\Mode
+	Case #ProjectIsApp
+	SetXMLNodeText(*Child,"Application")
+	Case #ProjectIsDynamicLib
+	SetXMLNodeText(*Child,"Dynamic library")
+	Case #ProjectIsStaticLib
+	SetXMLNodeText(*Child,"Static library")
+	EndSelect
+	*Ptr=CreateXMLNode(*Ptr)
+	SetXMLNodeName(*Ptr,"Option")
+	Project_AddNodeOption(*Ptr,"SafeThread",*this\Options\SafeThread)
+	Project_AddNodeOption(*Ptr,"Unicode",*this\Options\Unicode)
+	Project_AddNodeOption(*Ptr,"ASM",*this\Options\ASM)
+	Project_AddNodeOption(*Ptr,"OnError",*this\Options\OnError)
+	Project_AddNodeOption(*Ptr,"ThemeXP",*this\Options\ThemesXP)
+	Project_AddNodeOption(*Ptr,"UserMode",*this\Options\UserMode)
+	Project_AddNodeOption(*Ptr,"AdminMode",*this\Options\AdminMode)
+	Project_AddNodeOption(*Ptr,"Precompilation",*this\Options\Precompilation)
+	Else
+	Debug "erreur"
+	EndIf
+	SaveXML(XML,*this\Path,#PB_XML_NoDeclaration)
+	Else
+	Debug "erreur"
+	EndIf
+EndProcedure
+Procedure.s GetMediasPath(*this.Project)
+	ProcedureReturn GetPathPart(*this\Path)+*this\name+"/"+"Medias"+"/"
+EndProcedure
+Procedure.s GetSourcesPath(*this.Project)
+	ProcedureReturn GetPathPart(*this\Path)+*this\name+"/"+"Sources"+"/"
+EndProcedure
+Procedure.s GetGeneratedSourcesPath(*this.Project)
+	ProcedureReturn GetPathPart(*this\Path)+*this\name+"/"+"Generated Sources"+"/"
+EndProcedure
+Procedure.s GetBinariePath(*this.Project)
+Protected retour.s
+	Select Preference_GetPreference(*System\Prefs,"GENERAL","structure")
+	Case "X64"
+	retour="x64 - "
+	Default
+	retour="x86 - "
+	EndSelect
+	CompilerIf #PB_Compiler_OS=#PB_OS_Linux
+	retour+"linux"
+	CompilerElse
+	retour+"Windows"
+	CompilerEndIf
+	ProcedureReturn GetPathPart(*this\Path)+*this\Name+"/"+"Binaries"+"/"+retour+"/"
+EndProcedure
+Procedure.s Project_GetFilePath(*this.Project,Number.l)
+	ProcedureReturn GetSourcesPath(*this)+Directory_GetFilePath(*this\Files,Number)
+EndProcedure
+Procedure.i Project_RemoveFile(*this.Project,Number.l)
+Protected *File.File
+	*File=Directory_RemoveFile(*this\Files,Number)
+	If *File
+	DeleteFile(*File\Path)
+	freefile(*File)
+	EndIf
+EndProcedure
+Procedure.s Project_GetFunctionList(*this.Project)
+Protected n.i
+Protected retour.s
+	ProcedureReturn retour
+EndProcedure
+Procedure.i FreeProject(*this.Project)
+	
+EndProcedure
+Procedure.i NewCompiler(StructureCompiler.w)
+Protected *this.Compiler
+Protected n.i
+Protected ID.i
+Protected Sortie.s
+	*this=AllocateMemory(SizeOf(Compiler))
+	
+	*this\Constante=CreateArray()
+	*this\Structure=CreateArray()
+	*this\Function=CreateArray()
+	Select StructureCompiler
+	Case #X86
+	*this\Path=Preference_GetPreference(*System\Prefs,"X86","Compiler Path")
+	Case #X64
+	*this\Path=Preference_GetPreference(*System\Prefs,"X64","Compiler Path")
+	EndSelect
+	*this\Path+#PB_Compiler
+	If FileSize(*this\Path)<=0
+	FreeCompiler(*this)
+	ProcedureReturn 0
+	EndIf
+	ID=RunProgram(*this\Path,#CompilerFlagStandby,"",#PB_Program_Read|#PB_Program_Open|#PB_Program_Write|#PB_Program_Hide)
+	If Not ID
+	FreeCompiler(*this)
+	ProcedureReturn 0
+	EndIf
+	While ProgramRunning(ID)
+	Sortie=ReadProgramString(ID)
+	If Sortie="READY"
+	WriteProgramStringN(ID,#CompilerFlagGetStructureList)
+	While ProgramRunning(ID)
+	Sortie=ReadProgramString(ID)
+	If Sortie=#CompilerFlagEndOutput
+	Break
+	Else
+	AddEllement(*this\Structure,NewCompilerStructure(Sortie))
+	EndIf
+	Wend
+	WriteProgramStringN(ID,#CompilerFlagGetFunctionList)
+	While ProgramRunning(ID)
+	Sortie=ReadProgramString(ID)
+	If Sortie=#CompilerFlagEndOutput
+	Break
+	Else
+	AddEllement(*this\Function,NewCompilerFunction(Sortie))
+	EndIf
+	Wend
+	Break
+	EndIf
+	Wend
+	WriteProgramStringN(ID,#CompilerFlagQuit)
+	CloseProgram(ID)
+	Select StructureCompiler
+	Case #X86
+	If Preference_GetPreference(*System\Prefs,"GENERAL","structure")="X86"
+	MakeFunctionListToString(*this)
+	MakeStructureListToString(*this)
+	EndIf
+	Case #X64
+	If Preference_GetPreference(*System\Prefs,"GENERAL","structure")="X64"
+	MakeFunctionListToString(*this)
+	MakeStructureListToString(*this)
+	EndIf
+	EndSelect
+	ProcedureReturn *this
+EndProcedure
+Procedure.s Compiler_GetFunctionProtoFromName(*this.Compiler,txt.s)
+Protected n.i
+Protected *fct.CompilerFunction
+	For n=1 To CountEllement(*this\Function)
+	*fct=GetEllement(*this\Function,n)
+	If LCase(txt)=LCase(*fct\Name)
+	ProcedureReturn *fct\Declaration
+	EndIf
+	Next n
+EndProcedure
+Procedure.i Compiler_RunProgram(*this.Compiler,Param.s)
+	ProcedureReturn RunProgram(*this\Path,Param+" "+#CompilerFlagQuiet,"",#PB_Program_Read|#PB_Program_Open|#PB_Program_Write|#PB_Program_Hide)
+EndProcedure
+Procedure.i Build(*this.Compiler,Flag.s,Destination.s)
+	ProcedureReturn RunProgram(*this\Path,Flag+" "+#CompilerFlagBuild+" "+Chr(34)+Destination+Chr(34)+" "+#CompilerFlagQuiet,"",#PB_Program_Read|#PB_Program_Open|#PB_Program_Write|#PB_Program_Hide)
+EndProcedure
+Procedure.i FreeCompiler(*this.Compiler)
+	FreeArray(*this\Function)
+	FreeArray(*this\Structure)
+	FreeArray(*this\Constante)
+	FreeMemory(*this)
+EndProcedure
+Procedure.i NewCompilerStructure(Name.s)
+Protected *this.CompilerStructure
+	*this=AllocateMemory(SizeOf(CompilerStructure))
+	*this\Name=Name
+	*this\atribut=CreateArray()
+	ProcedureReturn *this
+EndProcedure
+Procedure.s CompilerStructure_GetName(*this.CompilerStructure)
+	ProcedureReturn *this\Name
+EndProcedure
+Procedure.i FreeCompilerStructure(*this.CompilerStructure)
+	FreeMemory(*this)
+EndProcedure
+Procedure.i NewCompilerFunction(Name.s)
+Protected *this.CompilerFunction
+	*this=AllocateMemory(SizeOf(CompilerFunction))
+	*this\Name=Trim(StringField(Name,1,"("))
+	*this\Declaration=Trim(Name)
+	ProcedureReturn *this
+EndProcedure
+Procedure.s CompilerFunction_GetName(*this.CompilerFunction)
+	ProcedureReturn *this\Name
+EndProcedure
+Procedure.i FreeCompilerFunction(*this.CompilerFunction)
+	FreeMemory(*this)
+EndProcedure
+Procedure.i LineIs(Line.s)
+Protected n.i
+Protected Temp.s
+	Line=LCase(Line)
+	Temp=StringField(Line,1," ")
+	Select Asc(Mid(Line,1,1))
+	Case 35
+	ProcedureReturn #Constant
+	Case 97 To 122,65 To 90
+	If Temp="compilercondition"
+	ProcedureReturn #CompilerCondition
+	EndIf
+	If Temp="compilerendcondition"
+	ProcedureReturn #CompilerEndCondition
+	EndIf
+	If Left(Line,Len("Static Procedure"))="static procedure"
+	If Mid(Line,Len("Static Procedure")+1,1)=" " Or Mid(Line,Len("Static Procedure")+1,1)="."
+	ProcedureReturn #StaticProcedure
+	EndIf
+	EndIf
+	If Left(Line,Len("Define"))="define"
+	If Mid(Line,Len("Define")+1,1)=" " Or Mid(Line,Len("Define")+1,1)="."
+	ProcedureReturn #Define
+	EndIf
+	EndIf
+	If Left(Line,Len("Procedure"))="procedure"
+	If FindString(Temp,".",1)
+	Temp=StringField(Temp,1,".")
+	EndIf
+	For n=1 To CountString(#Procedure_ModeList," ")+1
+	If Temp=StringField(#Procedure_ModeList,n," ")
+	ProcedureReturn #Procedure
+	EndIf
+	Next n
+	EndIf
+	If Temp="endprocedure"
+	ProcedureReturn #EndProcedure
+	EndIf
+	If Temp="global"
+	ProcedureReturn #Global
+	EndIf
+	If Temp="structure"
+	ProcedureReturn #Structure
+	EndIf
+	If Temp="endstructure"
+	ProcedureReturn #EndStructure
+	EndIf
+	If Temp="includefile" Or Temp="xincludefile"
+	ProcedureReturn #FileInclude
+	EndIf
+	If Temp="includeimport" Or Temp="xincludeimport"
+	ProcedureReturn #ImportInclude
+	EndIf
+	If Temp="class"
+	ProcedureReturn #Class
+	EndIf
+	If Temp="endclass"
+	ProcedureReturn #EndClass
+	EndIf
+	If Temp="protected"
+	ProcedureReturn #Protected
+	EndIf
+	If Temp="enumeration"
+	ProcedureReturn #Enumeration
+	EndIf
+	If Temp="endenumeration"
+	ProcedureReturn #EndEnumeration
+	EndIf
+	If Temp="macro"
+	ProcedureReturn #Macro
+	EndIf
+	If Temp="endmacro"
+	ProcedureReturn #EndMacro
+	EndIf
+	EndSelect
+	ProcedureReturn #None
+EndProcedure
+Procedure.i NewComment(Comment.s,Line.i,Path.s="")
+Protected *this.Comment
+	*this=AllocateMemory(SizeOf(Comment))
+	*this\name=Comment
+	*this\Line=Line
+	*this\File=Path
+	ProcedureReturn *this
+EndProcedure
+Procedure.i NewStructure(Comment.s,Line.i,Path.s="")
+Protected *this.Structure
+	*this=AllocateMemory(SizeOf(Structure))
+	*this\name=Comment
+	*this\Line=Line
+	*this\File=Path
+	ProcedureReturn *this
+EndProcedure
+Procedure.i NewFunction(Function.s,Line.i,Path.s="")
+Protected *this.Function
+	*this=AllocateMemory(SizeOf(Function))
+	*this\name=StringField(Function,1,"(")
+	*this\Line=Line
+	*this\File=Path
+	*this\Declaration=Function
+	ProcedureReturn *this
+EndProcedure
+Procedure.s Function_GetName(*this.Function)
+	ProcedureReturn *this\name
+EndProcedure
+Procedure.s MakeCompilerParamList(*this.System)
+Protected Param.s
+	If Preference_GetPreference(*this\Prefs,"Compiler Options","ASM")="1"
+	Param+" "+#CompilerFlagASM
+	EndIf
+	If Preference_GetPreference(*this\Prefs,"Compiler Options","Unicode")="1"
+	Param+" "+#CompilerFlagUnicode
+	EndIf
+	If Preference_GetPreference(*this\Prefs,"Compiler Options","SafeThread")="1"
+	Param+" "+#CompilerFlagSafeThread
+	EndIf
+	If Preference_GetPreference(*this\Prefs,"Compiler Options","OnError")="1"
+	Param+" "+#CompilerFlagOnError
+	EndIf
+	CompilerIf #PB_Compiler_OS=#PB_OS_Windows
+	If Preference_GetPreference(*this\Prefs,"Compiler Options","XPSkin")="1"
+	Param+" "+"/XP"
+	EndIf
+	If Preference_GetPreference(*this\Prefs,"Compiler Options","AdministratorMode")="1"
+	Param+" "+"/ADMINISTRATOR"
+	EndIf
+	If Preference_GetPreference(*this\Prefs,"Compiler Options","UserMode")="1"
+	Param+" "+"/USER"
+	EndIf
+	CompilerEndIf
+	ProcedureReturn Param
+EndProcedure
+Procedure.i GetCurrentCompiler(*this.System)
+	Select Preference_GetPreference(*this\Prefs,"GENERAL","structure")
+	Case "X86"
+	ProcedureReturn *System\Compiler[#X86]
+	Case "X64"
+	ProcedureReturn *System\Compiler[#X64]
+	EndSelect
+EndProcedure
+Procedure.s GetFunctionProtoFromName(*this.System,txt.s)
+Protected Proto.s
+	Select Preference_GetPreference(*this\Prefs,"GENERAL","structure")
+	Case "X86"
+	If *System\Compiler[#X86]
+	Proto=Compiler_GetFunctionProtoFromName(*System\Compiler[#X86],txt)
+	If Proto
+	ProcedureReturn Proto
+	EndIf
+	EndIf
+	Case "X64"
+	If *System\Compiler[#X64]
+	Proto=Compiler_GetFunctionProtoFromName(*System\Compiler[#X86],txt)
+	If Proto
+	ProcedureReturn Proto
+	EndIf
+	EndIf
+	EndSelect
+	ProcedureReturn ""
+EndProcedure
+Procedure.i IsOpenFile(*this.System,File.s)
+Protected n.i
+Protected *Panel.Panel
+	For n=1 To CountEllement(*System\Panel)
+	*Panel=GetEllement(*System\Panel,n)
+	If *Panel\File\Path=File
+	ProcedureReturn n
+	EndIf
+	Next n
+	ProcedureReturn 0
+EndProcedure
+Procedure.i UpdateOpenFile(*this.System,type.i,File.s)
+Protected Text.s
+	Select type
+	Case #File
+	Text=Preference_GetPreference(*this\Prefs,"GENERAL","OpenedFile")
+	If FindString(file,";",1)Or Text
+	Preference_SetPreference(*this\Prefs,"GENERAL","OpenedFile",Text+";"+file)
+	Else
+	Preference_SetPreference(*this\Prefs,"GENERAL","OpenedFile",file)
+	EndIf
+	EndSelect
+	Preference_SavePreference(*this\Prefs)
+EndProcedure
+Procedure.i AddToHistory(*this.System,File.s)
+	
+EndProcedure
+Procedure.i SaveCurrentPanel(*this.System)
+Protected *Panel.Panel
+	*Panel=GetEllement(*System\Panel,*this\CurrentPanel)
+	Select SaveFile(*Panel\File,*Panel\ScintillaGadget)
+	Case 1
+	IHM_PanelSaved(*this\IHM,*this\CurrentPanel-1,*Panel\File\File)
+	Default
+	EndSelect
+	If *this\OpenProject
+	If Project_IsFile(*this\OpenProject,*Panel\file)
+	LoadStructure(*Panel\file)
+	EndIf
+	EndIf
+EndProcedure
+Procedure.i GetCurrentScintillaGadget(*this.System)
+Protected *Panel.Panel
+	If *this\CurrentPanel
+	*Panel=GetEllement(*System\Panel,*this\CurrentPanel)
+	If *Panel
+	ProcedureReturn *Panel\ScintillaGadget
+	Else
+	ProcedureReturn 0
+	EndIf
+	Else
+	ProcedureReturn 0
+	EndIf
+EndProcedure
+Procedure.i CheckUndoRedo(*this.System)
+Protected *Ptr.i
+	*Ptr=GetCurrentScintillaGadget(*System)
+	If SCI_CanUndo(*Ptr)
+	DisableMenuItem(*this\IHM\menu[0],#undo,0)
+	Else
+	DisableMenuItem(*this\IHM\menu[0],#undo,1)
+	EndIf
+	If SCI_CanRedo(*Ptr)
+	DisableMenuItem(*this\IHM\menu[0],#redo,0)
+	Else
+	DisableMenuItem(*this\IHM\menu[0],#redo,1)
+	EndIf
+EndProcedure
+Procedure.i SetCurrentPanel(*this.System,NewElement.w)
+	*this\CurrentPanel=NewElement
+	CheckUndoRedo(*this)
+EndProcedure
+Procedure.i GetCurrentPanel(*this.System)
+	ProcedureReturn GetEllement(*System\Panel,*this\CurrentPanel)
+EndProcedure
+Procedure.i CurrentFileModified(*this.System,Gadget.i)
+Protected *Panel.Panel
+	*Panel=GetEllement(*this\Panel,*this\CurrentPanel)
+	If Gadget<>*Panel\ScintillaGadget
+	ProcedureReturn
+	EndIf
+	If *Panel\File\Saved=1
+	IHM_PanelModified(*this\IHM,*this\CurrentPanel-1)
+	*Panel\File\Saved=0
+	EndIf
+EndProcedure
+Procedure.i LoadTemplates(*this.System)
+Protected DirID.i
+Protected *Template.i
+	DirID=ExamineDirectory(#PB_Any,Preference_GetPreference(*this\Prefs,"GENERAL","MainPath")+"Templates/","*.chtp")
+	If Not IsDirectory(DirID)
+	ProcedureReturn 0
+	EndIf
+	While NextDirectoryEntry(DirID)
+	*Template=NewTemplate(Preference_GetPreference(*this\Prefs,"GENERAL","MainPath")+"Templates/"+DirectoryEntryName(DirID))
+	If Not *Template
+	ProcedureReturn 0
+	EndIf
+	IHM_AddTemplate(*System\IHM,*Template)
+	SetEllement(*System\Template,CountEllement(*System\Template)+1,*Template)
+	Wend
+	FinishDirectory(DirID)
+	ProcedureReturn 1
+EndProcedure
+Procedure.i CreateProject(*this.System,number.i,Path.s,Name.s)
+	GenerateProject(GetEllement(*System\Template,number),Path,Name)
+EndProcedure
+Procedure.i GetCurrentProject(*this.System)
+	ProcedureReturn *this\OpenProject
+EndProcedure
+Procedure.i System_CloseProject(*this.System)
+	If *this\OpenProject
+	IHM_CloseProject(*this\IHM)
+	FreeProject(*this\OpenProject)
+	*this\OpenProject=#Null
+	Preference_SetPreference(*this\Prefs,"GENERAL","OpenedProject","")
+	Preference_SavePreference(*this\Prefs)
+	EndIf
+EndProcedure
+Procedure.i System_OpenProject(*this.System,File.s)
+Protected *Project.i
+	*Project=OpenProject(File)
+	If *Project
+	System_CloseProject(*this)
+	*this\OpenProject=*Project
+	IHM_ShowProjectTree(*this\IHM,*this\OpenProject)
+	ResizeWindows(*this\IHM,#WIN_Main)
+	Preference_SetPreference(*this\Prefs,"GENERAL","OpenedProject",File)
+	Preference_SavePreference(*this\Prefs)
+	Else
+	MessageRequester("error","project  not loaded")
+	EndIf
+EndProcedure
+Procedure.i SavePreferences(*this.System)
+Protected *Prefs.NewPrefs
+Protected n.i
+	For n=1 To CountEllement(*this\NewPrefs)
+	*Prefs=GetEllement(*this\NewPrefs,n)
+	Preference_SetPreference(*this\Prefs,*Prefs\Group,*Prefs\Name,*Prefs\Value)
+	Next n
+	RemoveNewPreferences(*this)
+	Preference_SavePreference(*this\Prefs)
+	If Preference_GetPreference(*this\Prefs,"GENERAL","structure")="X64" And FileSize(Preference_GetPreference(*this\Prefs,"X64","Compiler Path")+#PB_CompilerName)>0
+	If FileSize(Preference_GetPreference(*this\Prefs,"X86","Compiler Path")+#PB_CompilerName)<0
+	DisableMenuItem(*this\IHM\menu[0],#SwitchStructure,1)
+	EndIf
+	ElseIf FileSize(Preference_GetPreference(*this\Prefs,"X86","Compiler Path")+#PB_CompilerName)>0
+	If FileSize(Preference_GetPreference(*this\Prefs,"X64","Compiler Path")+#PB_CompilerName)<0
+	DisableMenuItem(*this\IHM\menu[0],#SwitchStructure,1)
+	EndIf
+	Else
+	DisableMenuItem(*this\IHM\menu[0],#Compiler,1)
+	DisableMenuItem(*this\IHM\menu[0],#CompilerProject,1)
+	EndIf
+EndProcedure
+Procedure.i RemoveNewPreferences(*this.System)
+Protected *Pref.NewPrefs
+	While CountEllement(*System\NewPrefs)
+	FreeEllement(*System\NewPrefs,1)
+	Wend
+EndProcedure
+Procedure.i TryOpenFile(*this.System,File.s)
+Protected *Panel.Panel
+	*Panel=GetEllement(*System\Panel,*this\CurrentPanel)
+	If FileSize(GetPathPart(*Panel\File\Path)+File)>=0
+	System_AddPanel(*this,GetPathPart(*Panel\File\Path)+File)
+	ElseIf FileSize(GetPathPart(File))>=0
+	System_AddPanel(*this,File)
+	EndIf
+EndProcedure
+Procedure.s GetFunctionList(*this.System)
+	If *this\OpenProject
+	ProcedureReturn Project_GetFunctionList(*this\OpenProject)
+	Else
+	ProcedureReturn ""
+	EndIf
+EndProcedure
+Procedure.i SystemEnd(*this.System)
+Protected n.i
+	For n=1 To CountEllement(*this\Panel)
+	If System_RemoveCurrentPanel(*this,#False)=-1
+	ProcedureReturn
+	EndIf
+	Next n
+	End
+EndProcedure
