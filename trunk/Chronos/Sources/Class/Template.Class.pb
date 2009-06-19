@@ -13,6 +13,7 @@ Class ProjectOption Extends Amphore
 	AdminMode.b
 	UserMode.b
 	Precompilation.b
+	SubSystem.s
 	
 	Procedure loadOption(*node)
 		Select LCase(GetXMLAttribute(*node, "name"))
@@ -65,7 +66,6 @@ Class ProjectOption Extends Amphore
 		SetXMLAttribute(*child, "name", "usermode")
 		SetXMLAttribute(*child, "value", str(*this\UserMode))
 		*child = CreateXMLNode(*node)
-		debug *child
 		SetXMLNodeName(*child, "option")
 		SetXMLAttribute(*child, "name", "precompiler")
 		SetXMLAttribute(*child, "value", str(*this\Precompilation))
@@ -175,6 +175,12 @@ Class Template Extends ProjectOption
 		EndIf
 		SetXMLNodeName(*XMLChildNode, "name")
 		SetXMLNodeText(*XMLChildNode, *this\Name)
+		*XMLChildNode = CreateXMLNode(*XMLNode)
+		If Not *XMLChildNode
+			ProcedureReturn #False
+		EndIf
+		SetXMLNodeName(*XMLChildNode, "subsystem")
+		SetXMLNodeText(*XMLChildNode, *this\SubSystem)
 		*this.generateOptionNode(*XMLNode)
 		Protected *Memory = AllocateMemory(ExportXMLSize(*XML))
 		If Not *Memory
@@ -235,4 +241,4 @@ Class Template Extends ProjectOption
 			CloseFile(CreateFile(#PB_Any, Path + "Sources/main.pb"))
 		EndIf
 	EndProcedure
-EndClass
+	EndClass	
