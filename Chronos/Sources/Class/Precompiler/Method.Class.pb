@@ -24,7 +24,7 @@
 							EndIf
 						Next i
 						If Not Number = ""
-							If i <= Len(Text) And Mid(Text, j, 1) = "$"
+							If i <= Len(Text) And Mid(Text, i, 1) = "$"
 								Found = #False
 							Else
 								Found = #True
