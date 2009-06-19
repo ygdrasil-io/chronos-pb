@@ -1,9 +1,9 @@
 ﻿;=============================================================;
 ;Lib Preferences                                                                                                                                                ;
 ;=============================================================;
-IncludeImport "DS.lib.Array"
-IncludeImport "DS.lib.Preferences.Option"
-IncludeImport "DS.lib.Preferences.Group"
+IncludeImport "DS.Lib.Array"
+IncludeImport "DS.Lib.Preferences.Option"
+IncludeImport "DS.Lib.Preferences.Group"
 
 Class Preference
 	Name.s
@@ -77,7 +77,7 @@ Class Preference
 		Protected *Group.Group, n
 			For n=1 To *this\Group.CountElement()
 				*Group = *this\Group.GetElement(n)
-				If lcase(*Group\Name) = lcase(Group)
+				If LCase(*Group\Name) = LCase(Group)
 					ProcedureReturn *Group
 				EndIf
 		Next n
@@ -130,3 +130,7 @@ Class Preference
 		ProcedureReturn ""
 	EndProcedure
 EndClass
+
+; IDE Options = PureBasic v3.94 (Windows - x86)
+; CursorPosition = 5
+; Folding = --
