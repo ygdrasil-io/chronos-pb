@@ -11,6 +11,7 @@ CompilerCondition #PB_Compiler_OS= #PB_OS_Windows
 	#CompilerFlagDebugger = "/DEBUGGER"
 	#CompilerFlagBuild = "/EXE"
 	#CompilerFlagQuiet = "/QUIET"
+	#CompilerSubSystem = "/SUBSYSTEM"
 CompilerEndCondition
 CompilerCondition #PB_Compiler_OS = #PB_OS_Linux Or #PB_Compiler_OS = #PB_OS_MacOS
 	#PB_Compiler = "pbcompiler"
@@ -23,6 +24,7 @@ CompilerCondition #PB_Compiler_OS = #PB_OS_Linux Or #PB_Compiler_OS = #PB_OS_Mac
 	#CompilerFlagDebugger = "-d"
 	#CompilerFlagBuild = "-e"
 	#CompilerFlagQuiet = "-q"
+	#CompilerSubSystem = "-s"
 CompilerEndCondition
 
 #CompilerFlagGetStructureList = "STRUCTURELIST"

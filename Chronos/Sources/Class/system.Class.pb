@@ -81,7 +81,7 @@ Class System Extends IHM
 					*this\Prefs.SetPreference("GENERAL", "structure", "X86")
 				EndIf
 			EndIf
-			*this\Prefs.SetPreference("GENERAL", "MainPath", GetPathPart(ProgramFilename()))
+			;*this\Prefs.SetPreference("GENERAL", "MainPath", GetPathPart(ProgramFilename()))
 			*this\Prefs.SavePreference()
 		EndIf
 		
@@ -514,6 +514,9 @@ Class System Extends IHM
 	
 	Procedure.s MakeCompilerParamList()
 		Protected Param.s
+		If Not *this\Prefs.GetPreference("Compiler Options", "SubSystem") = ""
+			Param + " " + #CompilerSubSystem + " " + *this\Prefs.GetPreference("Compiler Options", "SubSystem")
+		EndIf
 		If *this\Prefs.GetPreference("Compiler Options", "ASM") = "1"
 			Param + " " + #CompilerFlagASM
 		EndIf

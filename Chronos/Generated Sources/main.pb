@@ -192,75 +192,76 @@ CompilerEndIf
 #GD_EnableProjectUserMode=29
 #GD_EnableProjectPrecompiler=30
 #GD_ProjectTypeList=31
-#GD_SearchString=32
-#GD_SearchReplaceString=33
-#GD_SearchNext=34
-#GD_SearchReplaceAll=35
-#GD_SearchReplace=36
-#GD_TextNewPathCompiler=37
-#GD_SetPathAddCompiler=38
-#GD_ConfirmAddCompiler=39
-#GD_TreeTemplate=40
-#GD_SetPathNewProject=41
-#GD_PathNewProject=42
-#GD_CancelNewProject=43
-#GD_CreateNewProject=44
-#GD_NameNewProject=45
-#GD_TreeOption=46
-#GD_OptionConfirm=47
-#GD_OptionCancel=48
-#GD_OptionDone=49
-#GD_FrameLanguage=50
-#GD_ListLanguage=51
-#GD_FrameColor=52
-#GD_TextColor_Text=53
-#GD_TextColor_KeyWord=54
-#GD_TextColor_Function=55
-#GD_TextColor_Constant=56
-#GD_TextColor_String=57
-#GD_TextColor_Operator=58
-#GD_TextColor_Comment=59
-#GD_ImageColor_Text=60
-#GD_ImageColor_KeyWord=61
-#GD_ImageColor_Function=62
-#GD_ImageColor_Constant=63
-#GD_ImageColor_String=64
-#GD_ImageColor_Operator=65
-#GD_ImageColor_Comment=66
-#GD_FramePath=67
-#GD_X86Path_Text=68
-#GD_X64Path_Text=69
-#GD_X86Path=70
-#GD_X64Path=71
-#GD_X86Path_Select=72
-#GD_X64Path_Select=73
-#GD_ConfirmSetCompilerOption=74
-#GD_CancelSetCompilerOption=75
-#GD_EnableASM=76
-#GD_EnableUnicode=77
-#GD_EnableSafeThread=78
-#GD_EnableOnError=79
-#GD_EnableXPSkin=80
-#GD_EnableAdministratorMode=81
-#GD_EnableUserMode=82
-#GD_EnablePrecompiler=83
-#GD_SelectTemplateIcon=84
-#GD_SelectTemplateSourcesPath=85
-#GD_SelectTemplateMediaPath=86
-#GD_TemplateIconPath=87
-#GD_TemplateSourcesPath=88
-#GD_TemplateMediaPath=89
-#GD_CreateTemplate=90
-#GD_NewTemplateName=91
-#GD_ChooseTemplateType=92
-#GD_NewTemplateASM=93
-#GD_NewTemplateUnicode=94
-#GD_NewTemplateThreadSafe=95
-#GD_NewTemplateOnError=96
-#GD_NewTemplateXPSkin=97
-#GD_NewTemplateAdminMode=98
-#GD_NewTemplateUserMode=99
-#GD_NewTemplatePrecompiler=100
+#GD_ProjectSubSystem=32
+#GD_SearchString=33
+#GD_SearchReplaceString=34
+#GD_SearchNext=35
+#GD_SearchReplaceAll=36
+#GD_SearchReplace=37
+#GD_TextNewPathCompiler=38
+#GD_SetPathAddCompiler=39
+#GD_ConfirmAddCompiler=40
+#GD_TreeTemplate=41
+#GD_SetPathNewProject=42
+#GD_PathNewProject=43
+#GD_CancelNewProject=44
+#GD_CreateNewProject=45
+#GD_NameNewProject=46
+#GD_TreeOption=47
+#GD_OptionConfirm=48
+#GD_OptionCancel=49
+#GD_OptionDone=50
+#GD_FrameLanguage=51
+#GD_ListLanguage=52
+#GD_FrameColor=53
+#GD_TextColor_Text=54
+#GD_TextColor_KeyWord=55
+#GD_TextColor_Function=56
+#GD_TextColor_Constant=57
+#GD_TextColor_String=58
+#GD_TextColor_Operator=59
+#GD_TextColor_Comment=60
+#GD_ImageColor_Text=61
+#GD_ImageColor_KeyWord=62
+#GD_ImageColor_Function=63
+#GD_ImageColor_Constant=64
+#GD_ImageColor_String=65
+#GD_ImageColor_Operator=66
+#GD_ImageColor_Comment=67
+#GD_FramePath=68
+#GD_X86Path_Text=69
+#GD_X64Path_Text=70
+#GD_X86Path=71
+#GD_X64Path=72
+#GD_X86Path_Select=73
+#GD_X64Path_Select=74
+#GD_ConfirmSetCompilerOption=75
+#GD_CancelSetCompilerOption=76
+#GD_EnableASM=77
+#GD_EnableUnicode=78
+#GD_EnableSafeThread=79
+#GD_EnableOnError=80
+#GD_EnableXPSkin=81
+#GD_EnableAdministratorMode=82
+#GD_EnableUserMode=83
+#GD_EnablePrecompiler=84
+#GD_SelectTemplateIcon=85
+#GD_SelectTemplateSourcesPath=86
+#GD_SelectTemplateMediaPath=87
+#GD_TemplateIconPath=88
+#GD_TemplateSourcesPath=89
+#GD_TemplateMediaPath=90
+#GD_CreateTemplate=91
+#GD_NewTemplateName=92
+#GD_ChooseTemplateType=93
+#GD_NewTemplateASM=94
+#GD_NewTemplateUnicode=95
+#GD_NewTemplateThreadSafe=96
+#GD_NewTemplateOnError=97
+#GD_NewTemplateXPSkin=98
+#GD_NewTemplateAdminMode=99
+#GD_NewTemplateUserMode=100
+#GD_NewTemplatePrecompiler=101
 #OptionLang=1+0
 #OptionColor=1+1
 #OptionCompiler=1+2
@@ -324,6 +325,9 @@ CompilerEndIf
 CompilerIf #PB_Compiler_OS=#PB_OS_Windows
 #CompilerFlagQuiet="/QUIET"
 CompilerEndIf
+CompilerIf #PB_Compiler_OS=#PB_OS_Windows
+#CompilerSubSystem="/SUBSYSTEM"
+CompilerEndIf
 CompilerIf #PB_Compiler_OS=#PB_OS_Linux Or #PB_Compiler_OS=#PB_OS_MacOS
 #PB_Compiler="pbcompiler"
 CompilerEndIf
@@ -353,6 +357,9 @@ CompilerIf #PB_Compiler_OS=#PB_OS_Linux Or #PB_Compiler_OS=#PB_OS_MacOS
 CompilerEndIf
 CompilerIf #PB_Compiler_OS=#PB_OS_Linux Or #PB_Compiler_OS=#PB_OS_MacOS
 #CompilerFlagQuiet="-q"
+CompilerEndIf
+CompilerIf #PB_Compiler_OS=#PB_OS_Linux Or #PB_Compiler_OS=#PB_OS_MacOS
+#CompilerSubSystem="-s"
 CompilerEndIf
 #CompilerFlagGetStructureList="STRUCTURELIST"
 #CompilerFlagQuit="END"
@@ -507,6 +514,7 @@ Structure ProjectOption Extends Amphore
 	AdminMode.b
 	UserMode.b
 	Precompilation.b
+	SubSystem.s
 EndStructure
 
 Structure Template Extends ProjectOption
@@ -2713,11 +2721,13 @@ Protected i.i
 	*this\Gadget[#GD_EnableProjectAdministratorMode]=CheckBoxGadget(#PB_Any,20,120,360,20,GetText("OptionCompilation-Administrator"))
 	*this\Gadget[#GD_EnableProjectUserMode]=CheckBoxGadget(#PB_Any,20,140,360,20,GetText("OptionCompilation-UserMode"))
 	*this\Gadget[#GD_EnableProjectPrecompiler]=CheckBoxGadget(#PB_Any,20,160,360,20,GetText("OptionCompilation-Precompiler"))
-	TextGadget(#PB_Any,20,180,100,20,"Type :")
-	*this\Gadget[#GD_ProjectTypeList]=ComboBoxGadget(#PB_Any,100,180,100,2)
+	TextGadget(#PB_Any,20,182,100,20,"Type :")
+	TextGadget(#PB_Any,20,212,100,20,"SubSystem :")
+	*this\Gadget[#GD_ProjectTypeList]=ComboBoxGadget(#PB_Any,100,180,150,30)
 	AddGadgetItem(*this\Gadget[#GD_ProjectTypeList],0,"Application")
 	AddGadgetItem(*this\Gadget[#GD_ProjectTypeList],1,"Static library")
 	AddGadgetItem(*this\Gadget[#GD_ProjectTypeList],2,"Dynamic library")
+	*this\Gadget[#GD_ProjectSubSystem]=StringGadget(#PB_Any,100,210,150,25,"")
 	EndIf
 	Else
 	ProcedureReturn #False
@@ -3192,6 +3202,7 @@ Protected *Comment.Comment_Item
 	*System\OpenProject\AdminMode=GetGadgetState(*this\Gadget[#GD_EnableProjectAdministratorMode])
 	*System\OpenProject\UserMode=GetGadgetState(*this\Gadget[#GD_EnableProjectUserMode])
 	*System\OpenProject\Precompilation=GetGadgetState(*this\Gadget[#GD_EnableProjectPrecompiler])
+	*System\OpenProject\Subsystem=GetGadgetText(*this\Gadget[#GD_ProjectSubSystem])
 	Project_SaveProject(*System\OpenProject)
 	IHM_HideWindow(*this,#WIN_OptionProject)
 	Case *this\Gadget[#GD_CancelProjectOption]
@@ -3657,7 +3668,6 @@ Protected *child.i
 	SetXMLAttribute(*child,"name","usermode")
 	SetXMLAttribute(*child,"value",str(*this\UserMode))
 	*child=CreateXMLNode(*node)
-	debug *child
 	SetXMLNodeName(*child,"option")
 	SetXMLAttribute(*child,"name","precompiler")
 	SetXMLAttribute(*child,"value",str(*this\Precompilation))
@@ -3772,6 +3782,12 @@ Protected *Memory.i
 	EndIf
 	SetXMLNodeName(*XMLChildNode,"name")
 	SetXMLNodeText(*XMLChildNode,*this\Name)
+	*XMLChildNode=CreateXMLNode(*XMLNode)
+	If Not *XMLChildNode
+	ProcedureReturn #False
+	EndIf
+	SetXMLNodeName(*XMLChildNode,"subsystem")
+	SetXMLNodeText(*XMLChildNode,*this\SubSystem)
 	ProjectOption_generateOptionNode(*this,*XMLNode)
 	*Memory=AllocateMemory(ExportXMLSize(*XML))
 	If Not *Memory
@@ -3936,6 +3952,9 @@ Procedure.b Project_Export(*this.Project,Path.s)
 EndProcedure
 Procedure.s Project_GetCompilerParamList(*this.Project)
 Protected Param.s
+	If len(*this\SubSystem)>0
+	Param+" "+#CompilerSubSystem+" "+*this\SubSystem
+	EndIf
 	CompilerIf #PB_Compiler_OS=#PB_OS_Windows
 	If *this\ThemesXP
 	Param+" "+"/XP"
@@ -5928,7 +5947,6 @@ Protected n.i
 	Preference_SetPreference(*this\Prefs,"GENERAL","structure","X86")
 	EndIf
 	EndIf
-	Preference_SetPreference(*this\Prefs,"GENERAL","MainPath",GetPathPart(ProgramFilename()))
 	Preference_SavePreference(*this\Prefs)
 	EndIf
 	If Preference_GetPreference(*this\Prefs,"X86","Compiler Path")
@@ -6363,6 +6381,9 @@ Procedure.i System_CloseProject(*this.System)
 EndProcedure
 Procedure.s System_MakeCompilerParamList(*this.System)
 Protected Param.s
+	If Not Preference_GetPreference(*this\Prefs,"Compiler Options","SubSystem")=""
+	Param+" "+#CompilerSubSystem+" "+Preference_GetPreference(*this\Prefs,"Compiler Options","SubSystem")
+	EndIf
 	If Preference_GetPreference(*this\Prefs,"Compiler Options","ASM")="1"
 	Param+" "+#CompilerFlagASM
 	EndIf

@@ -103,7 +103,9 @@
 	
 	Procedure.s GetCompilerParamList()
 		Protected Param.s
-		
+		If len(*this\SubSystem) > 0
+			Param + " " + #CompilerSubSystem + " " + *this\SubSystem
+		EndIf
 		CompilerIf #PB_Compiler_OS = #PB_OS_Windows
 			If *this\ThemesXP
 				Param + " " + "/XP"
@@ -198,68 +200,6 @@ Procedure.i GetFileList(*this.Project)
 	ProcedureReturn *this\Files
 EndProcedure
 
-
-
-;Procedure OpenProject(Path.s)
-;	Path = ReplaceString(Path, "\", "/")
-;	Protected *this.Project = New Project(Path, ""), n = 1, i
-;	Protected *Ptr, *Child, XML = LoadXML(#PB_Any, Path, #PB_UTF8)
-;	If IsXML(XML)
-;		*Ptr = MainXMLNode(XML)
-;		*Child = ChildXMLNode(*Ptr)
-;		While *Child
-;			Select LCase(GetXMLNodeName(*Child))
-;				Case "name"
-;					*this\Name = GetXMLNodeText(*Child)
-;				Case "type"
-;					Select LCase(Trim(ReplaceString(GetXMLNodeText(*Child), Chr(9), " ")))
-;						Case "application"
-;							*this\mode = #ProjectIsApp
-;						Case "static library"
-;							*this\mode = #ProjectIsStaticLib
-;						Case "dynamic library"
-;							*this\mode = #ProjectIsDynamicLib
-;					EndSelect
-;				Case "option"
-;					*Ptr = *Child
-;					*Child = ChildXMLNode(*Ptr)
-;					i = 1
-;					While *Child
-;						Select LCase(GetXMLNodeName(*Child))
-;							Case "safethread"
-;								*this\Options\SafeThread = Val(GetXMLNodeText(*Child))
-;							Case "unicode"
-;								*this\Options\Unicode = Val(GetXMLNodeText(*Child))
-;							Case "asm"
-;								*this\Options\ASM = Val(GetXMLNodeText(*Child))
-;							Case "onerror"
-;								*this\Options\OnError = Val(GetXMLNodeText(*Child))
-;							Case "themexp"
-;								*this\Options\ThemesXP = Val(GetXMLNodeText(*Child))
-;							Case "usermode"
-;								*this\Options\UserMode = Val(GetXMLNodeText(*Child))
-;							Case "adminmode"
-;								*this\Options\AdminMode = Val(GetXMLNodeText(*Child))
-;							Case "precompilation"
-;								*this\Options\Precompilation = Val(GetXMLNodeText(*Child))
-;						EndSelect
-;						i + 1
-;						*Child = ChildXMLNode(*Ptr, i)
-;					Wend
-;					*Ptr = ParentXMLNode(*Ptr)
-;					
-;			EndSelect
-;			n + 1
-;			*Child = ChildXMLNode(*Ptr, n)
-;		Wend
-;		FreeXML(XML)
-;	Else
-;		ProcedureReturn 0
-;	EndIf
-;	*this\Files = New Directory(GetSourcesPath(*this))
-;	ProcedureReturn *this
-;EndProcedure
-
 Procedure Project_FileIs(*this.Project, Number.i)
 	ProcedureReturn Directory_FileIs(*this\Files, Number)
 EndProcedure
@@ -334,4 +274,4 @@ EndProcedure
 
 Procedure FreeProject(*this.Project)
 	;FreeMemory(*this)
-	EndProcedure	
+EndProcedure	

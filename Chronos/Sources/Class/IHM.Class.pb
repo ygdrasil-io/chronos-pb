@@ -103,6 +103,7 @@ Enumeration
 	#GD_EnableProjectUserMode
 	#GD_EnableProjectPrecompiler
 	#GD_ProjectTypeList
+	#GD_ProjectSubSystem
 	;other  interface generale
 	#GD_SearchString
 	#GD_SearchReplaceString
@@ -602,11 +603,13 @@ Class IHM
 					*this\Gadget[#GD_EnableProjectAdministratorMode] = CheckBoxGadget(#PB_Any, 20, 120, 360, 20, GetText("OptionCompilation-Administrator"))
 					*this\Gadget[#GD_EnableProjectUserMode] = CheckBoxGadget(#PB_Any, 20, 140, 360, 20, GetText("OptionCompilation-UserMode"))
 					*this\Gadget[#GD_EnableProjectPrecompiler] = CheckBoxGadget(#PB_Any, 20, 160, 360, 20, GetText("OptionCompilation-Precompiler"))
-					TextGadget(#PB_Any, 20, 180, 100, 20, "Type :")
-					*this\Gadget[#GD_ProjectTypeList] = ComboBoxGadget(#PB_Any, 100, 180, 100, 2)
+					TextGadget(#PB_Any, 20, 182, 100, 20, "Type :")
+					TextGadget(#PB_Any, 20, 212, 100, 20, "SubSystem :")
+					*this\Gadget[#GD_ProjectTypeList] = ComboBoxGadget(#PB_Any, 100, 180, 150, 30)
 					AddGadgetItem(*this\Gadget[#GD_ProjectTypeList], 0, "Application")
 					AddGadgetItem(*this\Gadget[#GD_ProjectTypeList], 1, "Static library")
 					AddGadgetItem(*this\Gadget[#GD_ProjectTypeList], 2, "Dynamic library")
+					*this\Gadget[#GD_ProjectSubSystem] = StringGadget(#PB_Any, 100, 210, 150, 25, "")
 				EndIf
 			Else
 				ProcedureReturn #False
@@ -1144,6 +1147,7 @@ Procedure IHM_EventGadget(*this.IHM, Event.i, *System.System)
 			*System\OpenProject\AdminMode = GetGadgetState(*this\Gadget[#GD_EnableProjectAdministratorMode])
 			*System\OpenProject\UserMode = GetGadgetState(*this\Gadget[#GD_EnableProjectUserMode])
 			*System\OpenProject\Precompilation = GetGadgetState(*this\Gadget[#GD_EnableProjectPrecompiler])
+			*System\OpenProject\Subsystem = GetGadgetText(*this\Gadget[#GD_ProjectSubSystem]) 
 			*System\OpenProject.SaveProject()
 			IHM_HideWindow(*this, #WIN_OptionProject)
 		Case *this\Gadget[#GD_CancelProjectOption]
