@@ -1,4 +1,10 @@
-﻿Procedure NewCompilerStructure(Name.s)
+﻿Class CompilerStructure
+	Name.s
+	*atribut.Array
+EndClass
+
+
+Procedure NewCompilerStructure(Name.s)
 	Protected *this.CompilerStructure = AllocateMemory(SizeOf(CompilerStructure))
 	*this\Name = Name
 	*this\atribut = New Array()
@@ -14,7 +20,3 @@ Procedure FreeCompilerStructure(*this.CompilerStructure)
 EndProcedure
 
 
-; IDE Options = PureBasic 4.30 (Windows - x86)
-; CursorPosition = 7
-; Folding = -
-; EnableXP
