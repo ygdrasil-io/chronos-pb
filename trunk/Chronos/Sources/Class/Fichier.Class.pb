@@ -1,36 +1,48 @@
-﻿Procedure NewFile()
-	Protected *this.File = AllocateMemory(SizeOf(File))
-	*this\Saved = 1
-	*this\Comment = new Array()
-	*this\Function = new Array()
-	ProcedureReturn *this
-EndProcedure
+﻿Class File Extends Node
+	Path.s
+	File.s
+	Text.s
+	Saved.b
+	*Comment.Comment
+	
+	Procedure File()
+		*this\Child = New Array()
+		*this\Type = #Node_File
+		*this\Saved = 1
+		*this\Comment = New Comment()
+		;*this.AddChild(*this\Comment)
+		
+	EndProcedure
+	
+	Procedure.s GetPath()
+		ProcedureReturn *this\Path
+	EndProcedure
+	
 
-Macro RemoveFileStructure(this)
-	RemoveAll(this\Comment)
-EndMacro
+EndClass
+
 
 Procedure LoadStructure(*this.File)
-	*this\Comment.RemoveAll()
-	*this\Function.RemoveAll()
-	Protected n,  text.s, position, temp.s
+	;	*this\Comment.RemoveAll()
+	;	*this\Function.RemoveAll()
+	Protected n,  text.s, position, temp.s, *ptr
 	For n = 1 To  CountString(*this\Text, #LF$)
 		text  = Trim(StringField(*this\Text, n,  #LF$))
 		position = FindStringNotInString(text , ";-", '"')
 		If position
-			*this\Comment.AddElement(NewComment(Mid(text, position + 2),  n, *this\Path))
+			*ptr = New Comment::Item(Mid(text, position + 2),  n, *this\Path)
+			If *Ptr
+				*this\Comment.AddChild(*Ptr)
+			EndIf
 		EndIf
-		temp = LCase(Left(text, 10))
-		If temp = "procedure " Or temp = "procedure."
-			*this\Function.AddElement(NewFunction(Trim(Mid(text, FindString(text, " ", 1))),  n, *this\Path))
-		EndIf
+		
 	Next  n
 EndProcedure
 
 Procedure File_LoadFile(Path.s)
 	Path = ReplaceString(Path, "\", "/")
 	If FileSize(Path) >= 0
-		Protected *this.File = NewFile()
+		Protected *this.File = New File()
 		*this\Path = Path
 		*this\File = GetFilePart(Path)
 		Protected FileID = OpenFile(#PB_Any, Path)
@@ -58,17 +70,17 @@ Procedure File_LoadFile(Path.s)
 	EndIf
 EndProcedure
 
-Procedure saveFileIn(Gadget.i, File.s)
+Procedure saveFileIn(*Gadget.Scintilla, File.s)
 	Protected FileID = CreateFile(#PB_Any, File), n
 	TruncateFile(FileID)
 	WriteStringFormat(FileID, #PB_UTF8)
-	For n=0 To SCI_GETLINECOUNT(Gadget) - 1
-		WriteStringN(FileID, SCI_GETLINE(Gadget, n), #PB_UTF8)
+	For n=0 To *Gadget.GETLINECOUNT() - 1
+		WriteStringN(FileID, *Gadget.GETLINE(n), #PB_UTF8)
 	Next n
 	CloseFile(FileID)
 EndProcedure
 
-Procedure SaveFile(*this.File, Gadget.i)
+Procedure SaveFile(*this.File, *Gadget.Scintilla)
 	If Not *this\Path
 		Protected Path.s = SaveFileRequester(GetText("Misc-SavingFile"), "", "Files Sources(*.pb;*.pbi)|*.pb;*.pbi" , 0)
 		If Path = ""
@@ -92,8 +104,8 @@ Procedure SaveFile(*this.File, Gadget.i)
 		Protected n
 		TruncateFile(FileID)
 		WriteStringFormat(FileID, #PB_UTF8)
-		For n=0 To SCI_GETLINECOUNT(Gadget) - 1
-			WriteStringN(FileID, SCI_GETLINE(Gadget, n), #PB_UTF8)
+		For n=0 To *Gadget.GETLINECOUNT() - 1
+			WriteStringN(FileID, *Gadget.GETLINE(n), #PB_UTF8)
 		Next n
 		CloseFile(FileID)
 		*this\saved = 1
@@ -101,13 +113,13 @@ Procedure SaveFile(*this.File, Gadget.i)
 	EndIf
 EndProcedure
 
-Procedure.s File_GetFunctionList(*this.File)
-	Protected n,  retour.s
-	For n = 1 To  *this\Function.CountElement()
-		retour  + Function_GetName(*this\Function.GetElement( n))  + "("  + " "
-	Next  n
-	ProcedureReturn retour
-EndProcedure
+;Procedure.s File_GetFunctionList(*this.File)
+;	Protected n,  retour.s
+;	For n = 1 To  *this\Function.CountElement()
+;		retour  + Function_GetName(*this\Function.GetElement( n))  + "("  + " "
+;	Next  n
+;	ProcedureReturn retour
+;EndProcedure
 
 Procedure FreeFile(*this.File)
 	FreeMemory(*this)

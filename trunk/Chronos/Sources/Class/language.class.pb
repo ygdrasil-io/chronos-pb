@@ -23,7 +23,7 @@ Procedure NewLanguage(File.s)
 		CloseFile(FileID)
 	Else
 		MessageRequester("Error", "Language Loading Error")
-		SystemEnd(*System)
+		*System.SystemEnd()
 	EndIf
 EndProcedure
 
@@ -39,7 +39,7 @@ Procedure LoadLanguage()
 		FinishDirectory(Dir)
 	Else
 		MessageRequester("Error", "Language Loading Error")
-		SystemEnd(*System)
+		*System.SystemEnd()
 	EndIf
 EndProcedure
 

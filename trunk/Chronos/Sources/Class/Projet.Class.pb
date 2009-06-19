@@ -1,125 +1,278 @@
-﻿Class Project
-	Path.s
+﻿Class Project Extends Template
 	File.s
-	Name.s
-	*Files.Array
-	Options.ProjectOption
-	Mode.b
-	*Constante.Array
-	*Structure.Array
-	*Function.Array
+	*Files.Directory
+	
+	
+	Procedure Project(Path.s, Name.s = "")
+		*this\Ressource = New Array()
+		Path = ReplaceString(Path, "\", "/")
+		*this\Name = Name
+		*this\Path = Path
+		*this\File = GetFilePart(*this\Path)
+	EndProcedure
+	
+	
+	Procedure Load()
+		Protected FileID, Path.s = GetPathPart(*this\Path), *XML
+		*this.CheckProjectDirectory(Path)
+		If FileSize(Path + "Sources/main.pb") < 0
+			FileID = CreateFile(#PB_Any, Path + "Sources/main.pb")
+			If Not IsFile(FileID)
+				ProcedureReturn #False
+			EndIf
+			CloseFile(FileID)
+		EndIf
+		*XML = LoadXML(#PB_Any, *this\Path, #PB_UTF8)
+		If Not IsXML(*XML)
+			ProcedureReturn #False
+		EndIf
+		Protected *Ptr = AllocateMemory(ExportXMLSize(*XML))
+		ExportXML(*XML, *Ptr, MemorySize(*Ptr))
+		*this.SetRessource(*Ptr, "XML", 1)
+		*this.GenerateConfig()
+		FreeXML(*XML)
+		*this\Files = New Directory(*this.GetSourcesPath())
+		ProcedureReturn #True	
+	EndProcedure
+	
+	Procedure.b ExportMedias(Path.s, MediaPath.s = "")
+		If Not MediaPath
+			MediaPath = *this.GetMediasPath()
+		EndIf
+		Protected DirID = ExamineDirectory(#PB_Any, MediaPath, "")
+		If Not DirID
+			ProcedureReturn #False
+		EndIf
+		If Not IsDirectory(DirID)
+			ProcedureReturn #False
+		EndIf
+		While NextDirectoryEntry(DirID)
+			If Not Left(DirectoryEntryName(DirID), 1) = "."
+				Select DirectoryEntryType(DirID)
+					Case #PB_DirectoryEntry_File
+						If Not CopyFile(MediaPath + DirectoryEntryName(DirID), Path + DirectoryEntryName(DirID))
+							ProcedureReturn #False
+						EndIf
+					Case #PB_DirectoryEntry_Directory
+						If Not CreateDirectory(Path + DirectoryEntryName(DirID))
+							ProcedureReturn #False
+						EndIf
+						If Not *this.ExportMedias(Path + DirectoryEntryName(DirID) + "/", MediaPath + DirectoryEntryName(DirID) + "/")
+							ProcedureReturn #False
+						EndIf
+				EndSelect
+			EndIf
+		Wend
+		FinishDirectory(DirID)
+		ProcedureReturn #True
+	EndProcedure
+	
+	Procedure.b Export(Path.s)
+		If FileSize(*this.GetBinariePath("X86")) > 0
+			If FileSize(Path + "x86") = -2
+				DeleteDirectory(Path + "x86", "", #PB_FileSystem_Recursive | #PB_FileSystem_Force)
+			EndIf
+			If CreateDirectory(Path + "x86")
+				If Not *this.ExportMedias(Path + "x86/")
+					ProcedureReturn #False
+				EndIf
+				If Not CopyFile(*this.GetBinariePath("X86"), Path + "x86/" + *this\Name + #Extension)
+					ProcedureReturn #False
+				EndIf
+			Else
+				ProcedureReturn #False
+			EndIf
+		EndIf
+		If FileSize(*this.GetBinariePath("X64")) > 0
+			If FileSize(Path + "x64") = -2
+				DeleteDirectory(Path + "x64", "", #PB_FileSystem_Recursive | #PB_FileSystem_Force)
+			EndIf
+			If CreateDirectory(Path + "x64")
+				If Not *this.ExportMedias(Path + "x64/")
+					ProcedureReturn #False
+				EndIf
+				If Not CopyFile(*this.GetBinariePath("X64"), Path + "x64/" + *this\Name + #Extension)
+					ProcedureReturn #False
+				EndIf
+			Else
+				ProcedureReturn #False
+			EndIf
+		EndIf
+		ProcedureReturn #True
+	EndProcedure
+	
+	Procedure.s GetCompilerParamList()
+		Protected Param.s
+		
+		CompilerIf #PB_Compiler_OS = #PB_OS_Windows
+			If *this\ThemesXP
+				Param + " " + "/XP"
+			EndIf
+			If *this\AdminMode
+				Param + " " + "/ADMINISTRATOR"
+			EndIf
+			If *this\UserMode
+				Param + " " + "/USER"
+			EndIf
+		CompilerEndIf
+		
+		ProcedureReturn Param
+	EndProcedure
 	
 	Procedure PrecompilerIsEnable()
-		ProcedureReturn *this\Options\Precompilation
+		ProcedureReturn *this\Precompilation
+	EndProcedure
+	
+	Procedure IsFile(*file)
+		ProcedureReturn Directory_IsFile(*this\Files, *file)
+	EndProcedure
+	
+	Procedure.Directory GetRootNode()
+		ProcedureReturn *This\Files
+	EndProcedure
+	
+	Procedure Free()
+		FreeMemory(*this)
+	EndProcedure
+	
+	Procedure.s GetMediasPath()
+		ProcedureReturn GetPathPart(*this\Path) + "Medias" + "/"
+	EndProcedure
+	
+	Procedure.s GetSourcesPath()
+		ProcedureReturn GetPathPart(*this\Path) + "Sources" + "/"
+	EndProcedure
+	
+	Procedure.s GetGeneratedSourcesPath()
+		ProcedureReturn GetPathPart(*this\Path) + "Generated Sources" + "/"
+	EndProcedure
+	
+	Procedure.s GetBinariePath(Architecture.s)
+		Protected retour.s
+		Select Architecture
+			Case "X64"
+				retour = "x64 - "
+			Default
+				retour = "x86 - "
+		EndSelect
+		CompilerIf #PB_Compiler_OS = #PB_OS_Linux
+			retour + "linux"
+		CompilerElse
+			retour + "Windows"
+		CompilerEndIf
+		ProcedureReturn GetPathPart(*this\Path) + "Binaries" + "/" + retour + "/" + *this\Name + #Extension
+	EndProcedure
+	
+	Procedure SaveProject()
+		*this.GenerateXML()
+		Protected *Ressource.Ressource = *this.GetRessource(1)
+		If FileSize(*this\Path) >= 0
+			DeleteFile(*this\Path)
+		EndIf
+		Protected FileID = CreateFile(#PB_Any, *this\Path)
+		If Not IsFile(FileID)
+			ProcedureReturn #False
+		EndIf
+		WriteData(FileID, *Ressource\Res, MemorySize(*Ressource\Res))
+		CloseFile(FileID)
+		ProcedureReturn #True
+	EndProcedure
+	
+	Procedure GetMode()
+		ProcedureReturn *this\mode
+	EndProcedure
+	
+	Procedure RemoveFile(Number.l)
+		Protected *Node.Node = *this\Files.removeNode(Number)
+		Protected *File.File, *Directory.Directory
+		If *Node
+			Select *Node\Type
+				Case #Node_Directory
+					*Directory = *Node
+					DeleteDirectory(*Directory\Name, "", #PB_FileSystem_Recursive)
+				Case #Node_File
+					*File = *Node
+					DeleteFile(*File\Path)
+			EndSelect
+		EndIf
 	EndProcedure
 EndClass
-
-Procedure NewProject(Path.s, Name.s)
-	Protected *this.Project = AllocateMemory(SizeOf(Project))
-	*this\Name = Name
-	*this\Path = Path
-	*this\File = GetFilePart(Path)
-	*this\Files = New Array()
-	ProcedureReturn *this
-EndProcedure
-
-Procedure Project_IsFile(*this.Project, *file)
-	ProcedureReturn Directory_IsFile(*this\Files, *file)
-EndProcedure
 
 Procedure.i GetFileList(*this.Project)
 	ProcedureReturn *this\Files
 EndProcedure
 
-Procedure GetMode(*this.Project)
-	ProcedureReturn *this\mode
-EndProcedure
 
-Procedure OpenProject(Path.s)
-	Path = ReplaceString(Path, "\", "/")
-	Protected *this.Project = NewProject(Path, ""), n = 1, i
-	Protected *Ptr, *Child, XML = LoadXML(#PB_Any, Path, #PB_UTF8)
-	If IsXML(XML)
-		*Ptr = MainXMLNode(XML)
-		*Child = ChildXMLNode(*Ptr)
-		While *Child
-			Select LCase(GetXMLNodeName(*Child))
-				Case "name"
-					*this\Name = GetXMLNodeText(*Child)
-				Case "type"
-					Select LCase(Trim(ReplaceString(GetXMLNodeText(*Child), Chr(9), " ")))
-						Case "application"
-							*this\mode = #ProjectIsApp
-						Case "static library"
-							*this\mode = #ProjectIsStaticLib
-						Case "dynamic library"
-							*this\mode = #ProjectIsDynamicLib
-					EndSelect
-				Case "option"
-					*Ptr = *Child
-					*Child = ChildXMLNode(*Ptr)
-					i = 1
-					While *Child
-						Select LCase(GetXMLNodeName(*Child))
-							Case "safethread"
-								*this\Options\SafeThread = Val(GetXMLNodeText(*Child))
-							Case "unicode"
-								*this\Options\Unicode = Val(GetXMLNodeText(*Child))
-							Case "asm"
-								*this\Options\ASM = Val(GetXMLNodeText(*Child))
-							Case "onerror"
-								*this\Options\OnError = Val(GetXMLNodeText(*Child))
-							Case "themexp"
-								*this\Options\ThemesXP = Val(GetXMLNodeText(*Child))
-							Case "usermode"
-								*this\Options\UserMode = Val(GetXMLNodeText(*Child))
-							Case "adminmode"
-								*this\Options\AdminMode = Val(GetXMLNodeText(*Child))
-							Case "precompilation"
-								*this\Options\Precompilation = Val(GetXMLNodeText(*Child))
-						EndSelect
-						i + 1
-						*Child = ChildXMLNode(*Ptr, i)
-					Wend
-					*Ptr = ParentXMLNode(*Ptr)
-					
-			EndSelect
-			n + 1
-			*Child = ChildXMLNode(*Ptr, n)
-		Wend
-		FreeXML(XML)
-	Else
-		ProcedureReturn 0
-	EndIf
-	*this\Files = NewDirectory(GetSourcesPath(*this))
-	ProcedureReturn *this
-EndProcedure
+
+;Procedure OpenProject(Path.s)
+;	Path = ReplaceString(Path, "\", "/")
+;	Protected *this.Project = New Project(Path, ""), n = 1, i
+;	Protected *Ptr, *Child, XML = LoadXML(#PB_Any, Path, #PB_UTF8)
+;	If IsXML(XML)
+;		*Ptr = MainXMLNode(XML)
+;		*Child = ChildXMLNode(*Ptr)
+;		While *Child
+;			Select LCase(GetXMLNodeName(*Child))
+;				Case "name"
+;					*this\Name = GetXMLNodeText(*Child)
+;				Case "type"
+;					Select LCase(Trim(ReplaceString(GetXMLNodeText(*Child), Chr(9), " ")))
+;						Case "application"
+;							*this\mode = #ProjectIsApp
+;						Case "static library"
+;							*this\mode = #ProjectIsStaticLib
+;						Case "dynamic library"
+;							*this\mode = #ProjectIsDynamicLib
+;					EndSelect
+;				Case "option"
+;					*Ptr = *Child
+;					*Child = ChildXMLNode(*Ptr)
+;					i = 1
+;					While *Child
+;						Select LCase(GetXMLNodeName(*Child))
+;							Case "safethread"
+;								*this\Options\SafeThread = Val(GetXMLNodeText(*Child))
+;							Case "unicode"
+;								*this\Options\Unicode = Val(GetXMLNodeText(*Child))
+;							Case "asm"
+;								*this\Options\ASM = Val(GetXMLNodeText(*Child))
+;							Case "onerror"
+;								*this\Options\OnError = Val(GetXMLNodeText(*Child))
+;							Case "themexp"
+;								*this\Options\ThemesXP = Val(GetXMLNodeText(*Child))
+;							Case "usermode"
+;								*this\Options\UserMode = Val(GetXMLNodeText(*Child))
+;							Case "adminmode"
+;								*this\Options\AdminMode = Val(GetXMLNodeText(*Child))
+;							Case "precompilation"
+;								*this\Options\Precompilation = Val(GetXMLNodeText(*Child))
+;						EndSelect
+;						i + 1
+;						*Child = ChildXMLNode(*Ptr, i)
+;					Wend
+;					*Ptr = ParentXMLNode(*Ptr)
+;					
+;			EndSelect
+;			n + 1
+;			*Child = ChildXMLNode(*Ptr, n)
+;		Wend
+;		FreeXML(XML)
+;	Else
+;		ProcedureReturn 0
+;	EndIf
+;	*this\Files = New Directory(GetSourcesPath(*this))
+;	ProcedureReturn *this
+;EndProcedure
 
 Procedure Project_FileIs(*this.Project, Number.i)
 	ProcedureReturn Directory_FileIs(*this\Files, Number)
 EndProcedure
 
 Procedure Project_GetFile(*this.Project, Number.i)
-	ProcedureReturn Directory_GetFile(*this\Files, Number)
+	;	ProcedureReturn Directory_GetFile(*this\Files, Number)
 EndProcedure
 
-Procedure.s GetCompilerParamList(*this.Project)
-	Protected Param.s, Struct.l
-	
-	CompilerIf #PB_Compiler_OS = #PB_OS_Windows
-		If *this\Options\ThemesXP
-			Param + " " + "/XP"
-		EndIf
-		If *this\Options\AdminMode
-			Param + " " + "/ADMINISTRATOR"
-		EndIf
-		If *this\Options\UserMode
-			Param + " " + "/USER"
-		EndIf
-	CompilerEndIf
-	
-	ProcedureReturn Param
-EndProcedure
+
 
 Procedure Project_AddNodeOption(*Parent, Name.s, Value.b)
 	Protected *Child = CreateXMLNode(*Parent)
@@ -127,86 +280,53 @@ Procedure Project_AddNodeOption(*Parent, Name.s, Value.b)
 	SetXMLNodeText(*Child, Str(Value))
 EndProcedure
 
-Procedure SaveProject(*this.Project)
-	Protected XML = CreateXML(#PB_Any, #PB_UTF8), *Ptr, *Child
-	If FileSize(*this\Path) >= 0
-		DeleteFile(*this\Path)
-	EndIf
-	If IsXML(XML)
-		*Ptr= CreateXMLNode(RootXMLNode(XML))
-		If *Ptr
-			SetXMLNodeName(*Ptr, "Project")
-			*Child = CreateXMLNode(*Ptr)
-			SetXMLNodeName(*Child, "Name")
-			SetXMLNodeText(*Child, *this\Name)
-			*Child = CreateXMLNode(*Ptr)
-			SetXMLNodeName(*Child, "Type")
-			Select *this\Mode
-				Case #ProjectIsApp
-					SetXMLNodeText(*Child, "Application")
-				Case #ProjectIsDynamicLib
-					SetXMLNodeText(*Child, "Dynamic library")
-				Case #ProjectIsStaticLib
-					SetXMLNodeText(*Child, "Static library")
-			EndSelect
-			*Ptr = CreateXMLNode(*Ptr)
-			SetXMLNodeName(*Ptr, "Option")
-			Project_AddNodeOption(*Ptr, "SafeThread", *this\Options\SafeThread)
-			Project_AddNodeOption(*Ptr, "Unicode", *this\Options\Unicode)
-			Project_AddNodeOption(*Ptr, "ASM", *this\Options\ASM)
-			Project_AddNodeOption(*Ptr, "OnError", *this\Options\OnError)
-			Project_AddNodeOption(*Ptr, "ThemeXP", *this\Options\ThemesXP)
-			Project_AddNodeOption(*Ptr, "UserMode", *this\Options\UserMode)
-			Project_AddNodeOption(*Ptr, "AdminMode", *this\Options\AdminMode)
-			Project_AddNodeOption(*Ptr, "Precompilation", *this\Options\Precompilation)
-		Else
-			Debug "erreur"
-		EndIf
-		SaveXML(XML, *this\Path, #PB_XML_NoDeclaration)
-	Else
-		Debug "erreur"
-	EndIf
-EndProcedure
+;Procedure SaveProject(*this.Project)
+;	Protected XML = CreateXML(#PB_Any, #PB_UTF8), *Ptr, *Child
+;	If FileSize(*this\Path) >= 0
+;		DeleteFile(*this\Path)
+;	EndIf
+;	If IsXML(XML)
+;		*Ptr= CreateXMLNode(RootXMLNode(XML))
+;		If *Ptr
+;			SetXMLNodeName(*Ptr, "Project")
+;			*Child = CreateXMLNode(*Ptr)
+;			SetXMLNodeName(*Child, "Name")
+;			SetXMLNodeText(*Child, *this\Name)
+;			*Child = CreateXMLNode(*Ptr)
+;			SetXMLNodeName(*Child, "Type")
+;			Select *this\Mode
+;				Case #ProjectIsApp
+;					SetXMLNodeText(*Child, "Application")
+;				Case #ProjectIsDynamicLib
+;					SetXMLNodeText(*Child, "Dynamic library")
+;				Case #ProjectIsStaticLib
+;					SetXMLNodeText(*Child, "Static library")
+;			EndSelect
+;			*Ptr = CreateXMLNode(*Ptr)
+;			SetXMLNodeName(*Ptr, "Option")
+;			Project_AddNodeOption(*Ptr, "SafeThread", *this\Options\SafeThread)
+;			Project_AddNodeOption(*Ptr, "Unicode", *this\Options\Unicode)
+;			Project_AddNodeOption(*Ptr, "ASM", *this\Options\ASM)
+;			Project_AddNodeOption(*Ptr, "OnError", *this\Options\OnError)
+;			Project_AddNodeOption(*Ptr, "ThemeXP", *this\Options\ThemesXP)
+;			Project_AddNodeOption(*Ptr, "UserMode", *this\Options\UserMode)
+;			Project_AddNodeOption(*Ptr, "AdminMode", *this\Options\AdminMode)
+;			Project_AddNodeOption(*Ptr, "Precompilation", *this\Options\Precompilation)
+;		Else
+;			Debug "erreur"
+;		EndIf
+;		SaveXML(XML, *this\Path, #PB_XML_NoDeclaration)
+;	Else
+;		Debug "erreur"
+;	EndIf
+;EndProcedure
 
-Procedure.s GetMediasPath(*this.Project)
-	ProcedureReturn GetPathPart(*this\Path) + *this\name + "/" + "Medias" + "/"
-EndProcedure
-
-Procedure.s GetSourcesPath(*this.Project)
-	ProcedureReturn GetPathPart(*this\Path) + *this\name + "/" + "Sources" + "/"
-EndProcedure
-
-Procedure.s GetGeneratedSourcesPath(*this.Project)
-	ProcedureReturn GetPathPart(*this\Path) + *this\name + "/" + "Generated Sources" + "/"
-EndProcedure
-
-Procedure.s GetBinariePath(*this.Project)
-	Protected retour.s
-	Select *System\Prefs.GetPreference("GENERAL", "structure")
-		Case "X64"
-			retour = "x64 - "
-		Default
-			retour = "x86 - "
-	EndSelect
-	CompilerIf #PB_Compiler_OS = #PB_OS_Linux
-		retour + "linux"
-	CompilerElse
-		retour + "Windows"
-	CompilerEndIf
-	ProcedureReturn GetPathPart(*this\Path) + *this\Name + "/" + "Binaries" + "/" + retour + "/"
-EndProcedure
 
 Procedure.s Project_GetFilePath(*this.Project, Number.l)
-	ProcedureReturn GetSourcesPath(*this) + Directory_GetFilePath(*this\Files, Number)
+	ProcedureReturn *this.GetSourcesPath() + Directory_GetFilePath(*this\Files, Number)
 EndProcedure
 
-Procedure Project_RemoveFile(*this.Project, Number.l)
-	Protected *File.File = Directory_RemoveFile(*this\Files, Number)
-	If *File
-		DeleteFile(*File\Path)
-		freefile(*File)
-	EndIf
-EndProcedure
+
 
 Procedure.s Project_GetFunctionList(*this.Project)
 	Protected n,  retour.s
@@ -219,8 +339,3 @@ EndProcedure
 Procedure FreeProject(*this.Project)
 	;FreeMemory(*this)
 EndProcedure
-
-; IDE Options = PureBasic 4.30 (Windows - x86)
-; CursorPosition = 12
-; Folding = fv--
-; EnableXP

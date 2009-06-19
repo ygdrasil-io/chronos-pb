@@ -1,11 +1,22 @@
-Procedure NewComment(Comment.s,  Line.i, Path.s = "")
-  Protected *this.Comment = AllocateMemory(SizeOf(Comment))
-  *this\name = Comment
-  *this\Line  = Line
-  *this\File = Path
-  ProcedureReturn *this
-EndProcedure
-; IDE Options = PureBasic 4.30 (Windows - x86)
-; CursorPosition = 6
-; Folding = -
-; EnableXP
+﻿Class Comment Extends Node
+	
+	Class Item Extends Definition
+		Procedure Item(Comment.s,  Line.i, Path.s = "")
+			*this\name = Comment
+			*this\Line  = Line
+			*this\File = Path
+			*this\Type = #Node_Comment
+			*this\Child = New Array()
+		EndProcedure
+		
+		Procedure.s GetName()
+			ProcedureReturn *this\name
+		EndProcedure
+	EndClass
+	
+	Procedure Comment()
+		*this\Child = New Array()
+		*this\Type = #Node_RootComment
+	EndProcedure
+	
+EndClass

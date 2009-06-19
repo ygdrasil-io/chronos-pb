@@ -19,6 +19,7 @@
 	#CompilerCondition
 	#CompilerEndCondition
 	#Protected
+	#Declare
 EndEnumeration
 
 Enumeration 1
@@ -29,7 +30,6 @@ Enumeration 1
 EndEnumeration
 
 #Procedure_ModeList = "procedure procedurec proceduredll procedurecdll"
-
 Procedure LineIs(Line.s)
 	Line = LCase(Line)
 	Protected n, Temp.s = StringField(Line, 1, " ")
@@ -43,15 +43,20 @@ Procedure LineIs(Line.s)
 			If Temp = "compilerendcondition"
 				ProcedureReturn #CompilerEndCondition
 			EndIf
-			If Left(Line, Len("Static Procedure")) = "static procedure"
-				If Mid(Line, Len("Static Procedure") + 1, 1) = " " Or Mid(Line, Len("Static Procedure") + 1, 1) = "."
-					ProcedureReturn #StaticProcedure
-				EndIf
-			EndIf
 			If Left(Line, Len("Define")) = "define"
 				If Mid(Line, Len("Define") + 1, 1) = " " Or Mid(Line, Len("Define") + 1, 1) = "."
 					ProcedureReturn #Define
 				EndIf
+			EndIf
+			If Left(Line, Len("StaticProcedure")) = "staticprocedure"
+				If FindString(Temp, ".", 1)
+					Temp = StringField(Temp, 1, ".")
+				EndIf
+				For n = 1 To CountString(#Procedure_ModeList, " ") + 1
+					If Temp = StringField("static"+#Procedure_ModeList, n, " ")
+						ProcedureReturn #Procedure
+					EndIf
+				Next n
 			EndIf
 			If Left(Line, Len("Procedure")) = "procedure"
 				If FindString(Temp, ".", 1)
@@ -101,6 +106,16 @@ Procedure LineIs(Line.s)
 			EndIf
 			If Temp = "endmacro"
 				ProcedureReturn #EndMacro
+			EndIf
+			If Left(Line, Len("declare")) = "declare"
+				If Mid(Line, Len("declare") + 1, 1) = " " Or Mid(Line, Len("declare") + 1, 1) = "."
+					ProcedureReturn #Declare
+				EndIf
+			EndIf
+			If Left(Line, Len("staticdeclare")) = "staticdeclare"
+				If Mid(Line, Len("staticdeclare") + 1, 1) = " " Or Mid(Line, Len("staticdeclare") + 1, 1) = "."
+					ProcedureReturn #Declare
+				EndIf
 			EndIf
 	EndSelect
 	ProcedureReturn #None
@@ -182,10 +197,10 @@ Class Precompiler
 		Protected LigneNbr, CompilerCondition.s
 		Protected FileID = OpenFile(#PB_Any, File)
 		If Not FileID
-			*System\IHM.WriteMessage("Cant read file : " + File)
+			*System.WriteMessage("Cant read file : " + File)
 			ProcedureReturn  #False
 		Else
-			*System\IHM.WriteMessage("Start to read:"+File)
+			*System.WriteMessage("Start to read:"+File)
 		EndIf
 		Protected BOM.b = ReadStringFormat(FileID), Line.s, Temp.s, start, val.l
 		Protected LineNbr = 1
@@ -200,14 +215,14 @@ Class Precompiler
 						If FindString(*this\IncludeImportX, LCase(Temp) + ";", 1) = #Null
 							*this\IncludeImportX + LCase(Temp) + ";"
 							If FileSize(Temp) < 0
-								*System.CodeError(File, LineNbr, "File Not Found " + File)
+								*System.CodeError(File, LineNbr, "File Not Found " + Temp)
 								ProcedureReturn #False
 							EndIf
 							If Not *this.start(Temp)
 								ProcedureReturn #False
 							EndIf
 						Else
-							*System\IHM.WriteMessage("Import ingore " + Temp)
+							*System.WriteMessage("Import ingore " + Temp)
 						EndIf
 					Case #FileInclude
 						Temp = PeekS(*this\String.GetElement(Val(StringField(Line, 2, "$"))))
@@ -448,16 +463,34 @@ Class Precompiler
 	
 	Procedure CheckConstructor(*Line.LineCode)
 		Protected Text.s = LCase(*Line\Text), n = FindString(Text, "new ", 1)
-		Protected Temp.s
+		Protected Temp.s, i, *Method.Precompiler::Method, *Class.Precompiler::Class
+		Protected CountP.l, Attributs.s
 		While n
 			If n = 1 Or IsAcceptedBeforePointer(Mid(Text, n - 1, 1))
 				temp = StringField(Mid(*Line\Text, n + 4), 1, "(")
 				If IsCorrectClass(temp)
+					*Class = *this.GetClass(temp)
 					If Not *this.GetClass(temp)
 						*System.CodeError(*Line\File, *Line\Line, "Class " + temp + " not found")
 						ProcedureReturn #False
 					Else
-						*Line\Text = Left(*Line\Text, n + 2) + "_" + Mid(*Line\Text, n + 4)
+						*Method = *Class.GetConstructor()
+						CountP = 0
+						Attributs = ""
+						For i = FindString(*Line\Text, "(", n) + 1 To Len(*Line\Text)
+							Select Mid(*Line\Text, i, 1)
+								case "("
+									CountP + 1
+								case ")"
+									CountP - 1
+									If CountP = - 1
+										Break;
+									EndIf
+							EndSelect
+							Attributs + Mid(*Line\Text, i, 1)
+						Next i
+						;*Line\Text = Left(*Line\Text, n + 2) + "_" + Mid(*Line\Text, n + 4)
+						*Line\Text = Left(*Line\Text, n - 1) + *Method.GetDeclaration(Attributs) + Mid(*Line\Text, i + 1)
 					EndIf
 				EndIf
 			EndIf
@@ -467,6 +500,40 @@ Class Precompiler
 	EndProcedure
 	
 	Procedure FormatText(*Line.LineCode, *Variable.Array = #Null, *Attribut.Array = #Null)
+		Protected n.l = FindString(*Line\Text, "::", 1), i.l, Start.l
+		Protected className.s
+		Protected methodName.s
+		Protected *Pclass.Precompiler::Class, *PMethod.Precompiler::Method
+		While n
+			className = ""
+			For i = n -1 to 1 step -1
+				If IsAcceptedForName(Mid(*Line\Text, i, 1))
+					className = Mid(*Line\Text, i, 1) + className
+				Else
+					Break
+				EndIf
+			Next i
+			Start = i
+			*Pclass = *this.GetClass(className)
+			If Not *Pclass = #Null
+				methodName = ""
+				For i = n + 2 to Len(*Line\Text)
+					If IsAcceptedForName(Mid(*Line\Text, i, 1))
+						methodName + Mid(*Line\Text, i, 1)
+					Else
+						Break
+					EndIf
+				Next i
+				If Not Mid(*Line\Text, i, 1) = "("
+					Break
+				EndIf
+				*PMethod = *Pclass.GetStaticMethod(methodName, *this)
+				If Not *PMethod = #Null
+					*Line\Text = Left(*Line\Text, Start) + className + "_Static_" + methodName + Mid(*Line\Text, i)
+				EndIf
+			EndIf
+			n = FindString(*Line\Text, "::", n + 1)
+		Wend
 		*Line\Text = ReplaceString(*Line\Text, "::", "_")
 		If Not *this.CheckConstructor(*Line)
 			ProcedureReturn #False
@@ -518,7 +585,6 @@ Class Precompiler
 							Method = Mid(*Line\Text, EndPointer + 1, EndMethod - EndPointer - 1)
 							If Type = "" ;si on connait deja le type -> methode imbriqué *p.m1().m2()...
 								Pointer = Mid(*Line\Text, StartPointer, EndPointer - StartPointer)
-								;PrintN(Pointer)
 								;on recupere le type
 								If FindString(Pointer, "\", 1)
 									Var = StringField(Pointer, 1, "\")
@@ -526,18 +592,14 @@ Class Precompiler
 									Var = Pointer
 								EndIf
 								*Var = #Null
-								;PrintN("wooow")
 								If Not *Attribut = #Null
-									;PrintN("attribut")
-									*Var = Precompiler::Static::GetVariable(*Attribut, Var)
+									*Var = *this.GetVariable(*Attribut, Var)
 								EndIf
 								If Not *Var
-									;PrintN("local")
-									*Var = Precompiler::Static::GetVariable(*Variable, Var)
+									*Var = *this.GetVariable(*Variable, Var)
 								EndIf
 								If Not *Var
-									;PrintN("global")
-									*Var= Precompiler::Static::GetVariable(*this\GlobalV, Var)
+									*Var= *this.GetVariable(*this\GlobalV, Var)
 								EndIf
 								If Not *Var
 									*System.CodeError(*Line\File, *Line\Line, Var + " Not found")
@@ -561,9 +623,9 @@ Class Precompiler
 								ProcedureReturn #False
 							EndIf
 							;on recupere la methode
-							*Method = *Class.GetMethod(Method)
+							*Method = *Class.GetMethod(Method, *this)
 							If Not *Method
-								*System.CodeError(*Line\File, *Line\Line, Method + " method not found")
+								*System.CodeError(*Line\File, *Line\Line, Method + " method not found from class " + Type)
 								ProcedureReturn #False
 							EndIf
 							;on recupere les attributs
@@ -571,10 +633,8 @@ Class Precompiler
 							For n = n To Len(*Line\Text)
 								Select Mid(*Line\Text, n, 1)
 									Case "("
-										;PrintN("+")
 										CountP + 1
 									Case ")"
-										;PrintN("-")
 										CountP - 1
 										If CountP = 0
 											Break
@@ -588,20 +648,23 @@ Class Precompiler
 							Ending = n
 							AttributList = Trim(Mid(*Line\Text, EndMethod + 1, Ending - EndMethod - 1))
 							If AttributList
-								If *NewLine
-									*NewLine.Free()
-								EndIf
-								*NewLine = New LineCode(AttributList, *Line\File, *Line\Line)
-								If Not *this.FormatMethod(*NewLine, *Variable, *Attribut)
-									*NewLine.Free()
-									ProcedureReturn #False
-								EndIf
-								AttributList = "," + *NewLine\Text
+								AttributList = "," + AttributList
 							EndIf
 							AttributList = Pointer + AttributList
-							Pointer = Type + "_" + Method + "(" + AttributList + ")"
+							Pointer = *Method.GetDeclaration(AttributList)
+							If *NewLine
+								*NewLine.Free()
+							EndIf
+							*NewLine = New LineCode(Pointer, *Line\File, *Line\Line)
+							If Not *this.FormatMethod(*NewLine, *Variable, *Attribut)
+								*NewLine.Free()
+								ProcedureReturn #False
+							EndIf
+							Type = *Method\Type
 							n + 1
-							*Line\Text = Left(*Line\Text, StartPointer - 1) + Pointer + Mid(*Line\Text, n)
+							*Line\Text = Left(*Line\Text, StartPointer - 1) + *NewLine\Text + Mid(*Line\Text, n)
+							n = len(Left(*Line\Text, StartPointer - 1) + *NewLine\Text) + 1
+							Char = Mid(*Line\Text ,n , 1)
 						Else
 							Break
 						EndIf
@@ -711,47 +774,47 @@ Class Precompiler
 		ProcedureReturn #False
 	EndProcedure
 	
-	Static Procedure GetVariable(*Array.Array, Name.s)
-	Name = LCase(Name)
-	Protected n, *ptr.Precompiler::Variable
-	For n = 1 To *Array.CountElement()
-		*ptr = *Array.GetElement(n)
-		If LCase(*ptr\Name) = Name
-			ProcedureReturn *ptr
-		EndIf
-	Next n
-	ProcedureReturn #Null
-EndProcedure
-
-
-Procedure.s GetTypeFromStructureField(Type.s, Field.s)
-	Protected n, *PStructure.Precompiler::Structure, *Field.Precompiler::Attribut
-	Protected *Class.Precompiler::Class
-	;PrintN("recherche dans le type" + Type)
-	For n = 1 To *this\Structure.CountElement()
-		*PStructure = *this\Structure.GetElement(n)
-		If LCase(*PStructure\Name) = LCase(Type)
-			*Field = *PStructure.GetField(Field)
-			If Not *Field
-				*Class = *this.GetClass(Type)
-				If *Class
-					;PrintN(Type + " extends " + *Class\Extend)
-					If *Class\Extend
-						;PrintN(*Class\Extend)
-						*Class = *this.GetClass(*Class\Extend)
-						If *Class
-							ProcedureReturn *this.GetTypeFromStructureField(*Class\Name, Field)
+	Procedure GetVariable(*Array.Array, Name.s)
+		Name = LCase(Name)
+		Protected n, *ptr.Precompiler::Variable
+		For n = 1 To *Array.CountElement()
+			*ptr = *Array.GetElement(n)
+			If LCase(*ptr\Name) = Name
+				ProcedureReturn *ptr
+			EndIf
+		Next n
+		ProcedureReturn #Null
+	EndProcedure
+	
+	
+	Procedure.s GetTypeFromStructureField(Type.s, Field.s)
+		Protected n, *PStructure.Precompiler::Structure, *Field.Precompiler::Attribut
+		Protected *Class.Precompiler::Class
+		;PrintN("recherche dans le type" + Type)
+		For n = 1 To *this\Structure.CountElement()
+			*PStructure = *this\Structure.GetElement(n)
+			If LCase(*PStructure\Name) = LCase(Type)
+				*Field = *PStructure.GetField(Field)
+				If Not *Field
+					*Class = *this.GetClass(Type)
+					If *Class
+						;PrintN(Type + " extends " + *Class\Extend)
+						If *Class\Extend
+							;PrintN(*Class\Extend)
+							*Class = *this.GetClass(*Class\Extend)
+							If *Class
+								ProcedureReturn *this.GetTypeFromStructureField(*Class\Name, Field)
+							EndIf
 						EndIf
+					Else
+						ProcedureReturn ""
 					EndIf
-				Else
 					ProcedureReturn ""
 				EndIf
-				ProcedureReturn ""
+				ProcedureReturn *Field\Type
 			EndIf
-			ProcedureReturn *Field\Type
-		EndIf
-	Next n
-	ProcedureReturn ""
-EndProcedure
-
-EndClass
+		Next n
+		ProcedureReturn ""
+	EndProcedure
+	
+	EndClass																					

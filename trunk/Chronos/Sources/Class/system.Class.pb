@@ -30,10 +30,9 @@ Global *System.System
 Global MainPath.s
 Global TempDir.s = GetTemporaryDirectory()
 
-Class System
+Class System Extends IHM
 	*Panel.Array = New Array()
 	*File.Array = New Array()
-	*IHM.IHM
 	CurrentPanel.w
 	*Prefs.Preference
 	*Plugin.Array = New Array()
@@ -45,6 +44,7 @@ Class System
 	*OpenProject.Project
 	*NewPrefs.Array = New Array()
 	*Precompiler.Precompiler = New Precompiler()
+	Debuger.b = #True
 	
 	Procedure System()
 		Protected n
@@ -80,22 +80,30 @@ Class System
 				Else
 					*this\Prefs.SetPreference("GENERAL", "structure", "X86")
 				EndIf
-				
 			EndIf
-			;*this\Prefs.SetPreference("GENERAL", "MainPath", GetPathPart(ProgramFilename()))
+			*this\Prefs.SetPreference("GENERAL", "MainPath", GetPathPart(ProgramFilename()))
 			*this\Prefs.SavePreference()
 		EndIf
 		
 		
 		If *this\Prefs.GetPreference("X86", "Compiler Path")
-			*this\Compiler[#X86] = NewCompiler(#X86)
+			*this\Compiler[#X86] = New Compiler(#X86)
+			If Not *this\Compiler[#X86]
+				Debug "erreur"
+			EndIf
 		EndIf
 		If *this\Prefs.GetPreference("X64", "Compiler Path")
-			*this\Compiler[#X64] = NewCompiler(#X64)
+			*this\Compiler[#X64] = New Compiler(#X64)
+			If Not *this\Compiler[#X64]
+				Debug "erreur"
+			EndIf
 		EndIf
 		MainPath = *this\Prefs.GetPreference("GENERAL", "MainPath")
 		LoadLanguage()
-		*this\IHM = NewIHM()
+		
+		If Not *this.LoadIHM()
+			*this.SystemEnd()
+		EndIf
 		If *this\Prefs.GetPreference("GENERAL", "OpenedFile")
 			For n = 1 To CountString(*this\Prefs.GetPreference("GENERAL", "OpenedFile"), ";") + 1
 				*this.AddPanel(StringField(*this\Prefs.GetPreference("GENERAL", "OpenedFile"), n, ";"))
@@ -106,14 +114,38 @@ Class System
 		If *this\Prefs.GetPreference("GENERAL", "OpenedProject")
 			*this.OpenProject(*this\Prefs.GetPreference("GENERAL", "OpenedProject"))
 		EndIf
-		LoadTemplates(*this)
-		ResizeWindows(*this\IHM, #WIN_Main)
-		ShowWindow(*this\IHM, #WIN_Main)
-		IHM_WriteMessage(*this\IHM, "Chronos started")
+		If Not *this.LoadTemplates()
+			MessageRequester("error", "template loading error")
+		EndIf
+		ResizeWindows(*this, #WIN_Main)
+		ShowWindow(*this, #WIN_Main)
+		*this.WriteMessage("Chronos started")
 	EndProcedure
 	
-	Procedure RemoveCurrentPanel(History.b = #True)
-		ProcedureReturn *this.RemovePanel(*this\CurrentPanel, History)
+	Procedure SwitchDebuggerUse()
+		If *System\Debuger
+			*System\Debuger = #False
+		Else
+			*System\Debuger = #True
+		EndIf
+		SetMenuItemState(*System\menu[#Menu_Main], #DebugerOn, *System\Debuger)
+	EndProcedure
+	
+	Procedure.Scintilla GetCurrentScintillaGadget()
+		If *this\CurrentPanel
+			Protected *Panel.Panel = *this\Panel.GetElement(*this\CurrentPanel)
+			If *Panel
+				ProcedureReturn *Panel\ScintillaGadget
+			Else
+				ProcedureReturn #False
+			EndIf
+		Else
+			ProcedureReturn #False
+		EndIf
+	EndProcedure
+	
+	Procedure RemoveCurrentPanel()
+		ProcedureReturn *this.RemovePanel(*this\CurrentPanel)
 	EndProcedure
 	
 	Procedure.Panel GetCurrentPanel()
@@ -131,61 +163,66 @@ Class System
 			n = IsOpenFile(*this, File)
 			If n ;si on a trouvé une occurence
 				If Not *this\CurrentPanel = n
-					IHM_SetCurrentPanel(*this\IHM, n - 1)
+					IHM_SetCurrentPanel(*this, n - 1)
 					SetCurrentPanel(*this, n)
 				EndIf
 				ProcedureReturn
 			EndIf
 			If *this\Panel.CountElement() = 1
-				Debug 1
 				*New = *this.GetCurrentPanel()
-				If *New\File\Path = "" And SCI_GetLength(*New\ScintillaGadget)
+				If *New\File\Path = "" And Not *New\ScintillaGadget.GetLength()
 					*this.RemoveCurrentPanel()
 				EndIf
 			EndIf
 			*New = New Panel()
 			*New\File = File_LoadFile(file)
-			*New\ScintillaGadget = NewScintillaGadget(*this\IHM, GetFilePart(file))
-			ScintillaSendMessage(*New\ScintillaGadget , #SCI_SETTEXT, 0, @*New\File\Text)
-			SCI_ResizeMargins(*New\ScintillaGadget)
-			AutoIdent(*New\ScintillaGadget)
-			Highlight(*New\ScintillaGadget, SCI_GetLineEndPosition(*New\ScintillaGadget, SCI_GETLINECOUNT(*New\ScintillaGadget)))
-			SCI_EmptyUndoBuffer(*New\ScintillaGadget)
+			*New\ScintillaGadget = NewScintillaGadget(*this, GetFilePart(file))
+			*New\ScintillaGadget.InsertText(0, *New\File\Text)
 		ElseIf  *File
 			n = IsOpenFile(*this, *File\Path)
 			If n ;si on a trouvé une occurence
 				If Not *this\CurrentPanel = n
-					IHM_SetCurrentPanel(*this\IHM, n - 1)
+					IHM_SetCurrentPanel(*this, n - 1)
 					SetCurrentPanel(*this, n)
 				EndIf
 				ProcedureReturn
 			EndIf
 			*New = New Panel()
 			*New\File = *File
-			*New\ScintillaGadget = NewScintillaGadget(*this\IHM, GetFilePart(*New\File\Path))
-			ScintillaSendMessage(*New\ScintillaGadget , #SCI_SETTEXT, 0, @*New\File\Text)
-			SCI_ResizeMargins(*New\ScintillaGadget)
-			AutoIdent(*New\ScintillaGadget)
-			Highlight(*New\ScintillaGadget, SCI_GetLineEndPosition(*New\ScintillaGadget, SCI_GETLINECOUNT(*New\ScintillaGadget)))
-			SCI_EmptyUndoBuffer(*New\ScintillaGadget)
+			*New\ScintillaGadget = NewScintillaGadget(*this, GetFilePart(*New\File\Path))
+			*New\ScintillaGadget.InsertText(0, *New\File\Text)
 		Else
 			*New = New Panel()
-			*New\File = NewFile()
-			*New\ScintillaGadget = NewScintillaGadget(*this\IHM, "<New>")
+			*New\File = New File()
+			*New\ScintillaGadget = NewScintillaGadget(*this, "<New>")
 		EndIf
-		*System\Panel.SetElement(*System\Panel.CountElement() + 1, *New)
+		*New\ScintillaGadget.ResizeMargins()
+		AutoIdent(*New\ScintillaGadget)
+		Highlight(*New\ScintillaGadget, *New\ScintillaGadget.GetLineEndPosition(*New\ScintillaGadget.GetLineCount()))
+		If *New\File\Path
+			If Not FindString(*this\Prefs.GetPreference("GENERAL", "OpenedFile"), *New\File\Path, 1)
+				*this\Prefs.SetPreference("GENERAL", "OpenedFile", *this\Prefs.GetPreference("GENERAL", "OpenedFile")+";"+*New\File\Path)
+				*this\Prefs.SavePreference()
+			EndIf
+		EndIf
+		*New\ScintillaGadget.EmptyUndoBuffer()
+		*System\Panel.AddElement(*New)
 		*this\CurrentPanel = *System\Panel.CountElement()
 	EndProcedure
 	
 	Procedure OpenProject(File.s)
-		Protected *Project = OpenProject(File)
+		Protected *Project.Project = New Project(File)
 		If *Project
-			System_CloseProject(*this)
-			*this\OpenProject = *Project
-			IHM_ShowProjectTree(*this\IHM, *this\OpenProject)
-			ResizeWindows(*this\IHM, #WIN_Main)
-			*this\Prefs.SetPreference("GENERAL", "OpenedProject", File)
-			*this\Prefs.SavePreference()
+			If *Project.load()
+				System_CloseProject(*this)
+				*this\OpenProject = *Project
+				IHM_ShowProjectTree(*this, *this\OpenProject)
+				ResizeWindows(*this, #WIN_Main)
+				*this\Prefs.SetPreference("GENERAL", "OpenedProject", File)
+				*this\Prefs.SavePreference()
+			Else
+				MessageRequester("error", "project  not loaded")
+			EndIf
 		Else
 			MessageRequester("error", "project  not loaded")
 		EndIf
@@ -193,7 +230,7 @@ Class System
 	
 	Procedure PrecompileFile(File.s, Destination.s)
 		*this\Precompiler.restart(*this.GetCurrentCompiler())
-		*System\IHM.WriteMessage("Start Precompilation")
+		*System.WriteMessage("Start Precompilation")
 		If *this\Precompiler.start(File)
 			If *this\Precompiler.LoadFileStructure()
 				If *this\Precompiler.FormatCode()
@@ -203,10 +240,8 @@ Class System
 				EndIf
 			EndIf
 		EndIf
-		*System\IHM.WriteMessage("Precompilation failed")
+		*System.WriteMessage("Precompilation failed")
 		ProcedureReturn #False
-		;Protected ID = RunProgram(*this\Prefs.GetPreference("GENERAL", "MainPath") + #PrecompilerName, File + " " + Destination, "", #PB_Program_Wait )
-		;ProcedureReturn 	ProgramExitCode(ID)
 	EndProcedure
 	
 	Procedure RemovePanel(number.w, History.b = #True)
@@ -226,22 +261,8 @@ Class System
 			If History = #True
 				AddToHistory(*this, *Panel\File\Path)
 			EndIf
-			Text = ReplaceString(*this\Prefs.GetPreference("GENERAL", "OpenedFile"), "\", "/")
-			For n = 1 To CountString(Text, ";") + 1
-				Temp = StringField(Text, n, ";")
-				If Not Temp =  *Panel\File\Path
-					If NewText
-						NewText + ";"
-					EndIf
-					NewText + Temp
-				EndIf
-			Next n
-			*this\Prefs.SetPreference("GENERAL", "OpenedFile", NewText)
-			*this\Prefs.SavePreference()
-			
-			
 		EndIf
-		IHM_RemovePanel(*this\IHM, number - 1)
+		IHM_RemovePanel(*this, number - 1)
 		*this\CurrentPanel - 1
 		*this\Panel.FreeElement(number)
 		*Panel.Free()
@@ -251,7 +272,7 @@ Class System
 			EndIf
 			*this\CurrentPanel = 1
 		EndIf
-		IHM_SetCurrentPanel(*this\IHM, *this\CurrentPanel - 1)
+		IHM_SetCurrentPanel(*this, *this\CurrentPanel - 1)
 		ProcedureReturn #True
 	EndProcedure
 	
@@ -259,73 +280,116 @@ Class System
 		ProcedureReturn Val(*this\Prefs.GetPreference("Compiler Options", "Precompiler"))
 	EndProcedure
 	
-	Procedure BuildCurrentFile(Destination.s)
+	Procedure.b BuildFile(File.s, Destination.s, Flag.s, Precompiler.b, Architecture.s)
 		Protected *panel.Panel = GetCurrentPanel(*this)
-		Protected Run = #True, ID.i, Retour.s, Final.s
-		Protected Flag.s
+		Protected ID.i, Retour.s, Final.s
 		Protected *Line.LineCode
-		If *this.PrecompilerIsEnable()
-			Run = *System.PrecompileFile(*Panel\File\Path,  TempDir + "main.pb")
-			Flag.s = Chr(34) + TempDir + "main.pb" + Chr(34) + MakeCompilerParamList(*this)
-		Else
-			Flag.s = Chr(34) + *Panel\File\Path + Chr(34) + MakeCompilerParamList(*this)
+		
+		Flag = Chr(34) + File + Chr(34) + Flag
+		Select  Architecture
+			Case "X86"
+				ID = Build(*this\Compiler[#X86], Flag, Destination)
+			Case "X64"
+				ID = Build(*this\Compiler[#X64], Flag, Destination)
+		EndSelect
+		If ID
+			While ProgramRunning(ID)
+				Retour = ReadProgramString(ID)
+				If Retour
+					If Final
+						Final + ";"
+					EndIf
+					Final + Retour
+				EndIf
+			Wend
 		EndIf
-		If Run
-			Select  *this\Prefs.GetPreference("GENERAL", "structure")
-				Case "X86"
-					ID = Build(*System\Compiler[#X86], Flag, Destination)
-				Case "X64"
-					ID = Build(*System\Compiler[#X64], Flag, Destination)
-			EndSelect
-			If ID
-				While ProgramRunning(ID)
-					Retour = ReadProgramString(ID)
-					If Retour
-						If Final
-							Final + ";"
-						EndIf
-						Final + Retour
-					EndIf
-				Wend
-			EndIf
-			If Final
-				Debug Final
-				If *this.PrecompilerIsEnable()
-					;*Line = *this\Precompiler.getLine(Val(StringField(Final, 3, " ")))
-					;*this.CodeError(*Line\File, *Line\Line, StringField(Final, CountString(Final, "-") + 1, "-"))
+		If Final
+			If Precompiler
+				*Line = *this\Precompiler.getLine(Val(StringField(Final, 3, " ")))
+				*this.CodeError(*Line\File, *Line\Line, StringField(Final, CountString(Final, "-") + 1, "-"))
+				ProcedureReturn #False
+			Else
+				If FindString(File, ";", 1)
+					*this.CodeError(StringField(Final, 2, "'"), Val(StringField(Final, 3, " ")), StringField(Final, CountString(Final, "-") + 1, "-"))
+					ProcedureReturn #False
 				Else
-					If FindString(*Panel\File\Path, ";", 1)
-						*this.CodeError(StringField(Final, 2, "'"), Val(StringField(Final, 3, " ")), StringField(Final, CountString(Final, "-") + 1, "-"))
-					Else
-						*this.CodeError(*Panel\File\Path, Val(StringField(Final, 3, " ")), StringField(Final, CountString(Final, "-") + 1, "-"))
-					EndIf
+					*this.CodeError(File, Val(StringField(Final, 3, " ")), StringField(Final, CountString(Final, "-") + 1, "-"))
+					ProcedureReturn #False
 				EndIf
 			EndIf
 		EndIf
+		ProcedureReturn #True
+	EndProcedure
+	
+	Procedure BuildProject()
+		If *this\OpenProject
+			Protected Precompiler.b = *this\OpenProject.PrecompilerIsEnable()
+			Protected Flags.s
+			Protected File.s
+			Protected Run = #True
+			*this.SaveProjectFiles()
+			File = *this\OpenProject.GetSourcesPath() + "main.pb"
+			Flags = *this\OpenProject.GetCompilerParamList()
+			If Precompiler
+				Run = *System.PrecompileFile(File,  *this\OpenProject.GetGeneratedSourcesPath() + "main.pb")
+				File = *this\OpenProject.GetGeneratedSourcesPath() + "main.pb"
+			EndIf
+			If Run
+				If *this\Compiler[#X64]
+					Run = *this.BuildFile(File, *this\OpenProject.GetBinariePath("X64"), Flags, Precompiler, "X64")
+				EndIf
+			EndIf
+			If Run
+				If *this\Compiler[#X86]
+					*this.BuildFile(File, *this\OpenProject.GetBinariePath("X86"), Flags, Precompiler, "X86")
+				EndIf
+			EndIf
+		EndIf
+	EndProcedure
+	
+	Procedure.b BuildCurrentFile(Destination.s)
+		Protected *panel.Panel = GetCurrentPanel(*this)
+		Protected Run.b = #True, Precompiler.b
+		Protected Flag.s, File.s
+		Protected *Line.LineCode
+		If *this.PrecompilerIsEnable()
+			Precompiler = #True
+			Run = *System.PrecompileFile(*Panel\File\Path,  TempDir + "main.pb")
+			File = TempDir + "main.pb"
+		Else
+			File = *Panel\File\Path
+		EndIf
+		If Run
+			Flag = *this.MakeCompilerParamList()
+			ProcedureReturn *this.BuildFile(File, Destination, Flag, Precompiler, *System\Prefs.GetPreference("GENERAL", "structure"))
+		EndIf
+		ProcedureReturn #False
 	EndProcedure
 	
 	Procedure CodeError(File.s, Line.l, Error.s)
-		*this\IHM.WriteMessage("Error:" + Error)
+		*this.WriteMessage("Error:" + Error)
 		*this.AddPanel(File)
-		Protected *Ptr = GetCurrentScintillaGadget(*this.System)
+		Protected *Ptr.Scintilla = *this.GetCurrentScintillaGadget()
 		line - 1
-		SCI_GoToPoS(*Ptr, SCI_PositionFromLine(*Ptr, line))
-		SCI_SetSel(*Ptr, SCI_PositionFromLine(*Ptr, line), SCI_PositionFromLine(*Ptr, line) + SCI_LineLength(*Ptr, line))
-		MessageRequester("", Error)
+		*Ptr.GoToPoS(*Ptr.PositionFromLine(line))
+		*Ptr.SetSel(*Ptr.PositionFromLine(line), *Ptr.PositionFromLine(line) + *Ptr.LineLength(line))
+		MessageRequester("", Error + " at line " + str(Line + 1))
 	EndProcedure
 	
-	
-	Procedure RunProgram(File.s, Param.s, Precompilation.b)
+	Procedure RunProgram(File.s, Param.s, Precompilation.b, WorkingDirectory.s)
 		Protected ID.i, *Ptr, Retour.s, Final.s
 		Protected *Line.LineCode
+		If *System\Debuger
+			Param + " " + #CompilerFlagDebugger
+		EndIf
 		Select  *this\Prefs.GetPreference("GENERAL", "structure")
 			Case "X86"
 				If *System\Compiler[#X86]
-					ID = Compiler_RunProgram(*System\Compiler[#X86], Chr(34) + File + Chr(34) + Param)
+					ID = Compiler_Build(*System\Compiler[#X86], Chr(34) + File + Chr(34) + Param, WorkingDirectory + "exe"+#Extension)
 				EndIf
 			Case "X64"
 				If *System\Compiler[#X64]
-					ID = Compiler_RunProgram(*System\Compiler[#X64], Chr(34) + File + Chr(34) + Param)
+					ID = Compiler_Build(*System\Compiler[#X64], Chr(34) + File + Chr(34) + Param, WorkingDirectory + "exe"+#Extension)
 				EndIf
 		EndSelect
 		If ID
@@ -340,6 +404,10 @@ Class System
 			Wend
 		EndIf
 		If Final
+			If Not FindString(Final, "-", 1)
+				MessageRequester("Error", Final)
+				ProcedureReturn
+			EndIf
 			If Precompilation
 				*Line = *this\Precompiler.getLine(Val(StringField(Final, 3, " ")))
 				*this.CodeError(*Line\File, *Line\Line, StringField(Final, CountString(Final, "-") + 1, "-"))
@@ -350,6 +418,25 @@ Class System
 					*this.CodeError(File, Val(StringField(Final, 3, " ")), StringField(Final, CountString(Final, "-") + 1, "-"))
 				EndIf
 			EndIf
+		Else		
+			Select  *this\Prefs.GetPreference("GENERAL", "structure")
+				Case "X86"
+					If *System\Compiler[#X86]
+						If *System\Debuger
+							CreateThread(@Compiler_ExecuteDebugger(), *System\Compiler[#X86])
+						Else
+							CreateThread(@Compiler_ExecuteFile(), *System\Compiler[#X86])
+						EndIf
+					EndIf
+				Case "X64"
+					If *System\Compiler[#X64]
+						If *System\Debuger
+							CreateThread(@Compiler_ExecuteDebugger(), *System\Compiler[#X64])
+						Else
+							CreateThread(@Compiler_ExecuteFile(), *System\Compiler[#X64])
+						EndIf
+					EndIf
+			EndSelect
 		EndIf
 	EndProcedure
 	
@@ -361,45 +448,142 @@ Class System
 				ProcedureReturn *System\Compiler[#X64]
 		EndSelect
 	EndProcedure
+	
+	Procedure SystemEnd()
+		Protected n, File.s, *Panel.Panel, Count.l = *this\Panel.CountElement()
+		For n = 1 To Count
+			*Panel = *This.GetCurrentPanel()
+			If *Panel\File\Path
+				If File
+					File + ";"
+				EndIf
+				File + *Panel\File\Path
+			Endif
+			If *this.RemoveCurrentPanel() = -1
+				ProcedureReturn
+			EndIf
+		Next n
+		*this\Prefs.SetPreference("GENERAL", "OpenedFile", File)
+		*this\Prefs.SavePreference()
+		End
+	EndProcedure
+	
+	Procedure SaveProjectFiles()
+		Protected n, *Panel.Panel, Count.l = *this\Panel.CountElement()
+		For n = 1 To Count
+			*Panel = *This.GetCurrentPanel()
+			If *Panel\File
+				If *this\OpenProject.IsFile(*Panel\File)
+					*this.SavePanel(n)
+				Endif
+			Endif
+		Next n
+	EndProcedure
+	
+	Procedure SaveCurrentPanel()
+		*this.SavePanel(*this\CurrentPanel)
+	EndProcedure
+	
+	Procedure SavePanel(n)
+		Protected *Panel.Panel = *this\Panel.GetElement(n)
+		Select SaveFile(*Panel\File, *Panel\ScintillaGadget)
+			Case 1
+				IHM_PanelSaved(*this, n - 1, *Panel\File\File)
+			Default
+		EndSelect
+		If *this\OpenProject
+			If Project_IsFile(*this\OpenProject, *Panel\file)
+				LoadStructure(*Panel\file)
+			EndIf
+		EndIf
+	EndProcedure
+	
+	Procedure GetCurrentProject()
+		ProcedureReturn *this\OpenProject
+	EndProcedure
+	
+	Procedure CloseProject()
+		If *this\OpenProject
+			IHM_CloseProject(*this)
+			FreeProject(*this\OpenProject)
+			*this\OpenProject = #Null
+			*this\Prefs.SetPreference("GENERAL", "OpenedProject", "")
+			*this\Prefs.SavePreference()
+		EndIf
+	EndProcedure
+	
+	Procedure.s MakeCompilerParamList()
+		Protected Param.s
+		If *this\Prefs.GetPreference("Compiler Options", "ASM") = "1"
+			Param + " " + #CompilerFlagASM
+		EndIf
+		If *this\Prefs.GetPreference("Compiler Options", "Unicode") = "1"
+			Param + " " + #CompilerFlagUnicode
+		EndIf
+		If *this\Prefs.GetPreference("Compiler Options", "SafeThread") = "1"
+			Param + " " + #CompilerFlagSafeThread
+		EndIf
+		If *this\Prefs.GetPreference("Compiler Options", "OnError") = "1"
+			Param + " " + #CompilerFlagOnError
+		EndIf
+		CompilerIf #PB_Compiler_OS = #PB_OS_Windows
+			If *this\Prefs.GetPreference("Compiler Options", "XPSkin") = "1"
+				Param + " " + "/XP"
+			EndIf
+			If *this\Prefs.GetPreference("Compiler Options", "AdministratorMode") = "1"
+				Param + " " + "/ADMINISTRATOR"
+			EndIf
+			If *this\Prefs.GetPreference("Compiler Options", "UserMode") = "1"
+				Param + " " + "/USER"
+			EndIf
+		CompilerEndIf
+		
+		ProcedureReturn Param
+	EndProcedure
+	
+	Procedure.s GetTemplatePath()
+		ProcedureReturn *this\Prefs.GetPreference("GENERAL", "MainPath") + "Templates/"
+	EndProcedure
+	
+	Procedure.s GetImagePath()
+		ProcedureReturn *this\Prefs.GetPreference("GENERAL", "MainPath") + "images/"
+	EndProcedure
+	
+	Procedure LoadTemplates()
+		Protected DirID = ExamineDirectory(#PB_Any, *this\Prefs.GetPreference("GENERAL", "MainPath") + "Templates/" , "*.cht")
+		If Not IsDirectory(DirID)
+			ProcedureReturn #False
+		EndIf
+		Protected *Template.Template
+		While NextDirectoryEntry(DirID)
+			*Template = New Template()
+			If Not *Template
+				ProcedureReturn #False
+			EndIf
+			If Not *Template.load(*this.getTemplatePath()  + DirectoryEntryName(DirID))
+				ProcedureReturn #False
+			EndIf
+			*System\Template.addElement(*Template)
+		Wend
+		FinishDirectory(DirID)
+		ProcedureReturn #True
+	EndProcedure
+	
+	Procedure CreateProject(number.i, Path.s, Name.s)
+		Protected *Template.Template = *this\Template.GetElement(number)
+		*Template.GenerateProject(Path, Name)
+	EndProcedure
 EndClass
 
 
 
-Procedure.s MakeCompilerParamList(*this.System)
-	Protected Param.s
-	If *this\Prefs.GetPreference("Compiler Options", "ASM") = "1"
-		Param + " " + #CompilerFlagASM
-	EndIf
-	If *this\Prefs.GetPreference("Compiler Options", "Unicode") = "1"
-		Param + " " + #CompilerFlagUnicode
-	EndIf
-	If *this\Prefs.GetPreference("Compiler Options", "SafeThread") = "1"
-		Param + " " + #CompilerFlagSafeThread
-	EndIf
-	If *this\Prefs.GetPreference("Compiler Options", "OnError") = "1"
-		Param + " " + #CompilerFlagOnError
-	EndIf
-	CompilerIf #PB_Compiler_OS = #PB_OS_Windows
-		If *this\Prefs.GetPreference("Compiler Options", "XPSkin") = "1"
-			Param + " " + "/XP"
-		EndIf
-		If *this\Prefs.GetPreference("Compiler Options", "AdministratorMode") = "1"
-			Param + " " + "/ADMINISTRATOR"
-		EndIf
-		If *this\Prefs.GetPreference("Compiler Options", "UserMode") = "1"
-			Param + " " + "/USER"
-		EndIf
-	CompilerEndIf
-	
-	ProcedureReturn Param
-EndProcedure
 
 Procedure GetCurrentCompiler(*this.System)
 	Select *this\Prefs.GetPreference("GENERAL", "structure")
 		Case "X86"
-			ProcedureReturn *System\Compiler[#X86]
+			ProcedureReturn *this\Compiler[#X86]
 		Case "X64"
-			ProcedureReturn *System\Compiler[#X64]
+			ProcedureReturn *this\Compiler[#X64]
 	EndSelect
 EndProcedure
 
@@ -435,20 +619,6 @@ Procedure IsOpenFile(*this.System, File.s)
 	ProcedureReturn 0
 EndProcedure
 
-Procedure UpdateOpenFile(*this.System,  type.i, File.s)
-	Protected Text.s
-	Select type
-		Case  #File
-			Text = *this\Prefs.GetPreference("GENERAL", "OpenedFile")
-			If FindString(file, ";", 1) Or Text
-				*this\Prefs.SetPreference("GENERAL", "OpenedFile", Text+";"+file)
-			Else
-				*this\Prefs.SetPreference("GENERAL", "OpenedFile", file)
-			EndIf
-	EndSelect
-	*this\Prefs.SavePreference()
-EndProcedure
-
 Procedure AddToHistory(*this.System, File.s)
 	;	If File
 	;		If *this\Prefs.GetPreference(*this\Prefs, "GENERAL", "History") = ""
@@ -464,19 +634,7 @@ Procedure AddToHistory(*this.System, File.s)
 	;	EndIf
 EndProcedure
 
-Procedure SaveCurrentPanel(*this.System)
-	Protected *Panel.Panel = *this\Panel.GetElement(*this\CurrentPanel)
-	Select SaveFile(*Panel\File, *Panel\ScintillaGadget)
-		Case 1
-			IHM_PanelSaved(*this\IHM, *this\CurrentPanel - 1, *Panel\File\File)
-		Default
-	EndSelect
-	If *this\OpenProject
-		If Project_IsFile(*this\OpenProject, *Panel\file)
-			LoadStructure(*Panel\file)
-		EndIf
-	EndIf
-EndProcedure
+
 
 Procedure GetCurrentScintillaGadget(*this.System)
 	If *this\CurrentPanel
@@ -494,16 +652,16 @@ EndProcedure
 
 
 Procedure CheckUndoRedo(*this.System)
-	Protected *Ptr = GetCurrentScintillaGadget(*System)
-	If SCI_CanUndo(*Ptr)
-		DisableMenuItem(*this\IHM\menu[0],#undo,0)
+	Protected *Ptr.Scintilla = GetCurrentScintillaGadget(*System)
+	If *Ptr.CanUndo()
+		DisableMenuItem(*this\menu[0],#undo,0)
 	Else
-		DisableMenuItem(*this\IHM\menu[0],#undo,1)
+		DisableMenuItem(*this\menu[0],#undo,1)
 	EndIf
-	If SCI_CanRedo(*Ptr)
-		DisableMenuItem(*this\IHM\menu[0],#redo,0)
+	If *Ptr.CanRedo()
+		DisableMenuItem(*this\menu[0],#redo,0)
 	Else
-		DisableMenuItem(*this\IHM\menu[0],#redo,1)
+		DisableMenuItem(*this\menu[0],#redo,1)
 	EndIf
 EndProcedure
 
@@ -522,46 +680,11 @@ Procedure CurrentFileModified(*this.System, Gadget.i)
 		ProcedureReturn
 	EndIf
 	If *Panel\File\Saved = 1
-		IHM_PanelModified(*this\IHM, *this\CurrentPanel - 1)
+		IHM_PanelModified(*this, *this\CurrentPanel - 1)
 		*Panel\File\Saved = 0
 	EndIf
 EndProcedure
 
-Procedure LoadTemplates(*this.System)
-	Protected DirID = ExamineDirectory(#PB_Any, *this\Prefs.GetPreference("GENERAL", "MainPath") + "Templates/" , "*.chtp")
-	If Not IsDirectory(DirID)
-		ProcedureReturn 0
-	EndIf
-	Protected *Template
-	While NextDirectoryEntry(DirID)
-		*Template = NewTemplate(*this\Prefs.GetPreference("GENERAL", "MainPath") + "Templates/"  + DirectoryEntryName(DirID))
-		If Not *Template
-			ProcedureReturn 0
-		EndIf
-		IHM_AddTemplate(*System\IHM, *Template)
-		*System\Template.SetElement(*System\Template.CountElement()+1, *Template)
-	Wend
-	FinishDirectory(DirID)
-	ProcedureReturn 1
-EndProcedure
-
-Procedure CreateProject(*this.System, number.i, Path.s, Name.s)
-	GenerateProject(*this\Template.GetElement(number) , Path, Name)
-EndProcedure
-
-Procedure GetCurrentProject(*this.System)
-	ProcedureReturn *this\OpenProject
-EndProcedure
-
-Procedure System_CloseProject(*this.System)
-	If *this\OpenProject
-		IHM_CloseProject(*this\IHM)
-		FreeProject(*this\OpenProject)
-		*this\OpenProject = #Null
-		*this\Prefs.SetPreference("GENERAL", "OpenedProject", "")
-		*this\Prefs.SavePreference()
-	EndIf
-EndProcedure
 
 
 Procedure SavePreferences(*this.System)
@@ -574,15 +697,15 @@ Procedure SavePreferences(*this.System)
 	*this\Prefs.SavePreference()
 	If *this\Prefs.GetPreference("GENERAL", "structure") = "X64" And FileSize(*this\Prefs.GetPreference("X64", "Compiler Path") + #PB_CompilerName) > 0
 		If FileSize(*this\Prefs.GetPreference("X86", "Compiler Path") + #PB_CompilerName) < 0
-			DisableMenuItem(*this\IHM\menu[0], #SwitchStructure, 1)
+			DisableMenuItem(*this\menu[0], #SwitchStructure, 1)
 		EndIf
 	ElseIf FileSize(*this\Prefs.GetPreference("X86", "Compiler Path") + #PB_CompilerName) > 0
 		If FileSize(*this\Prefs.GetPreference("X64", "Compiler Path") + #PB_CompilerName) < 0
-			DisableMenuItem(*this\IHM\menu[0], #SwitchStructure, 1)
+			DisableMenuItem(*this\menu[0], #SwitchStructure, 1)
 		EndIf
 	Else
-		DisableMenuItem(*this\IHM\menu[0], #Compiler, 1)
-		DisableMenuItem(*this\IHM\menu[0], #CompilerProject, 1)
+		DisableMenuItem(*this\menu[0], #Compiler, 1)
+		DisableMenuItem(*this\menu[0], #CompilerProject, 1)
 	EndIf
 EndProcedure
 
@@ -608,15 +731,5 @@ Procedure.s GetFunctionList(*this.System)
 	Else
 		ProcedureReturn ""
 	EndIf
-EndProcedure
-
-Procedure SystemEnd(*this.System)
-	Protected n
-	For n = 1 To *this\Panel.CountElement()
-		If *this.RemoveCurrentPanel(#False) = -1
-			ProcedureReturn
-		EndIf
-	Next n
-	End
 EndProcedure
 

@@ -63,6 +63,8 @@ Procedure LoadClass(n, NameSpace.s = "", *ClassList.Array = #Null)
 				i = *this.LoadClass(i, *Class\Name + "_", *Class\Class)
 			Case #Procedure, #StaticProcedure
 				i = *this.LoadMethod(i,*Class)
+			Case #Declare
+				i = *this.LoadMethod(i,*Class)
 			Case #EndClass
 				If *Class\Constructor.CountElement() = 0
 					*this.Constructor(*Class)
@@ -87,7 +89,48 @@ Class Class Extends Precompiler::Structure
 	*Class.Array = New Array()
 	ClassName.s
 	
-	Procedure GetMethod(Name.s)
+	Procedure GetConstructor()
+		ProcedureReturn *this\Constructor.GetElement(1)
+	EndProcedure
+	
+	Procedure GetStaticMethod(Name.s, *Precompiler.Precompiler)
+		Protected *Class.Precompiler::Class
+		Name = ReplaceString(Name, "::", "_")
+		If MemorySize(*This) = SizeOf(Precompiler::Structure)
+			If *this\Extend
+				*Class = *Precompiler.GetClass(*this\Extend)
+				ProcedureReturn *Class.GetMethod(Name, *Precompiler)
+			Else
+				ProcedureReturn #Null
+			Endif
+		Endif
+		Name = LCase(Name)
+		Protected n, *Method.Precompiler::Method
+		For n = 1 To *this\StaticMethod.CountElement()
+			*Method = *this\StaticMethod.GetElement(n)
+			If LCase(*Method\ClassName)  = Name
+				ProcedureReturn *Method
+			EndIf
+		Next n
+		If *this\Extend
+			*Class = *Precompiler.GetClass(*this\Extend)
+			If *Class
+				ProcedureReturn *Class.GetMethod(Name, *Precompiler)
+			EndIf
+		Endif
+		ProcedureReturn #Null
+	EndProcedure
+	
+	Procedure GetMethod(Name.s, *Precompiler.Precompiler)
+		Protected *Class.Precompiler::Class
+		If MemorySize(*This) = SizeOf(Precompiler::Structure)
+			If *this\Extend
+				*Class = *Precompiler.GetClass(*this\Extend)
+				ProcedureReturn *Class.GetMethod(Name, *Precompiler)
+			Else
+				ProcedureReturn #Null
+			Endif
+		Endif
 		Name = LCase(Name)
 		Protected n, *Method.Precompiler::Method
 		For n = 1 To *this\Method.CountElement()
@@ -96,6 +139,12 @@ Class Class Extends Precompiler::Structure
 				ProcedureReturn *Method
 			EndIf
 		Next n
+		If *this\Extend
+			*Class = *Precompiler.GetClass(*this\Extend)
+			If *Class
+				ProcedureReturn *Class.GetMethod(Name, *Precompiler)
+			EndIf
+		Endif
 		ProcedureReturn #Null
 	EndProcedure
 	
@@ -109,9 +158,3 @@ Class Class Extends Precompiler::Structure
 		EndIf
 	EndProcedure
 EndClass
-
-; IDE Options = PureBasic 4.30 (Windows - x86)
-; CursorPosition = 30
-; FirstLine = 3
-; Folding = --
-; EnableXP

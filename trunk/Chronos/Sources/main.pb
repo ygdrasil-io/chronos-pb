@@ -3,7 +3,38 @@
 ;-Header                                                     																		;
 ;============================================================;
 UsePNGImageDecoder()
-#Debug = #True
+#Chronos_version = 0
+#MainName = "Chronos"
+Global Version.s, Title.s
+Version=Str(#Chronos_version)+"."+Str(Year(#PB_Compiler_Date)-2000)+"."+Str(Month(#PB_Compiler_Date))+"."+Str(Day(#PB_Compiler_Date))
+Title = #MainName + " " + Version + " BETA 3"
+#ChronosSourceFiltre = "Chronos Source File (*.pb, *.pbi)|*.pb;*.pbi"
+#ChronosFiltre = "Chronos Suported File (*.pb, *.pbi, *.chp)|*.chp;*.pb;*.pbi"
+
+CompilerCondition #PB_Compiler_OS = #PB_OS_Windows
+	#Chronos_exe = #MainName+".exe"
+	#PrefixeFile = "windows"
+	#PB_CompilerName = "pbcompiler.exe"
+	#Extension = ".exe"
+	#PB_Debugger = "PBDebugger.exe"
+CompilerEndCondition
+
+CompilerCondition #PB_Compiler_OS = #PB_OS_Linux
+	#Chronos_exe = #MainName
+	#PrefixeFile = "linux"
+	#PB_CompilerName = "pbcompiler"
+	#Extension = ".out"
+	#PB_Debugger = "pbdebugger"
+CompilerEndCondition
+
+CompilerCondition #PB_Compiler_OS = #PB_OS_MacOS
+	#Chronos_exe = #MainName
+	#PrefixeFile = "macos"
+	#PB_CompilerName = "pbcompiler"
+	#Extension = ".out"
+	#PB_Debugger = "pbdebugger"
+CompilerEndCondition
+
 ;============================================================;
 ;lib commune                                                 																	;
 ;============================================================;
@@ -11,13 +42,8 @@ XIncludeImport "DS.Lib.Array"
 XIncludeImport "DS.Lib.Scintilla"
 XIncludeImport "DS.Lib.Preferences"
 XIncludeImport "DS.Lib.Node"
-
-IncludeFile "Class/String.Class.pb"
-
-;============================================================;
-;declaration                                                 																		;
-;============================================================;
-IncludeFile "Includes/declare.pbi.pb"
+XIncludeImport "DS.Lib.Amphore.Amphore"
+IncludeFile "Includes/String.pb"
 
 ;============================================================;
 ;application                                                	 																	;
@@ -45,8 +71,9 @@ IncludeFile "Class/Precompiler/Line.Class.pb"
 IncludeFile "Class/Precompiler/Precompiler.Class.pb"
 
 ;============================================================;
-;inside definition                                           																		;
+;IDE definition                                           																		;
 ;============================================================;
+IncludeFile "Class/Definition/Definition.Class.pb"
 IncludeFile "Class/Definition/Comment.Class.pb"
 ;IncludeFile "class/Definition/Atribut.class.pb"
 IncludeFile "Class/Definition/Structure.Class.pb"
@@ -63,72 +90,100 @@ Define *panel.Panel
 Define *Project.Project
 Define *Directory.Directory
 Define Parameter.s
-Define CurrentPos.l
+Define.l CurrentPos, n, LineStart, LineEnd, Indent
 Define.l Event
 Define.b Precompilation
 Define.b Run
 Define.s File
 Define.s Destination
+Define.Scintilla *SCI
+Define WorkingDirectory.s
+Define Number
+Define *Node.Node
+Define *File.File
+Define Text.s
+Define *Comment.Comment::Item
+
+
 *System = New System()
 Repeat
 	Event = WindowEvent()
 	While Event
-		*Project  = GetCurrentProject(*System)
+		*Project  = *System.GetCurrentProject()
 		Select Event
 			Case #PB_Event_Gadget
 				;{
 				Select EventType()
 					Case #PB_EventType_DragStart
 						Select EventGadget()
-							Case GetGadget(*System\IHM, #GD_Explorer)
-								DragFiles(GetGadgetText(GetGadget(*System\IHM, #GD_Explorer)))
+							Case GetGadget(*System, #GD_Explorer)
+								DragFiles(GetGadgetText(GetGadget(*System, #GD_Explorer)))
 						EndSelect
 					Default
-						IHM_EventGadget(*System\IHM, EventGadget(), *System)
+						IHM_EventGadget(*System, EventGadget(), *System)
 				EndSelect
 				;}
 			Case #PB_Event_Menu
 				;{
 				Event = EventMenu()
 				Select Event
+					Case #TemplateMaker
+						ShowWindow(*System, #WIN_TemplateMaker)
+					Case #GenerateDoc
+						
 					Case #RemoveFile, #RemoveDirectory
 						;{
-						If Not GetGadgetState(*System\IHM\Gadget[#GD_TreeProject])
-							MessageRequester("Error", "You can't delete this directory")
-						Else
-							Project_RemoveFile(*Project, GetGadgetState(*System\IHM\Gadget[#GD_TreeProject]))
-							IHM_SetCurrentProjectTree(*System\IHM,  #GD_ProjectFile)
+						Number = GetGadgetState(*System\Gadget[#GD_TreeProject])
+						If Number > 0
+							*Node = *Project\Files.GetNode(Number)
+							If *Node
+								If  (*Node\Type = #Node_File And Event = #RemoveFile)  Or  (*Node\Type = #Node_Directory And Event = #RemoveDirectory)
+									*Project.RemoveFile(Number)
+									RefreshTreeProject(*System)
+								EndIf
+							EndIf
 						EndIf
 						;}
 					Case #AddFileFromFile
 						;{
-						*Directory = Project_GetFile(*Project, GetGadgetState(*System\IHM\Gadget[#GD_TreeProject]))
-						Path = OpenFileRequester("Select a file", "", ChronosSourceFiltre, 1)
+						Path = OpenFileRequester("Select a file", "", #ChronosSourceFiltre, 1)
 						If Path
-							If CopyFile(Path, Project_GetFilePath(*Project, GetGadgetState(*System\IHM\Gadget[#GD_TreeProject])) + GetFilePart(Path))
-								Path = Project_GetFilePath(*Project, GetGadgetState(*System\IHM\Gadget[#GD_TreeProject])) + GetFilePart(Path)
-								Directory_AddFile(*Directory, File_LoadFile(Path))
-								IHM_SetCurrentProjectTree(*System\IHM,  #GD_ProjectFile)
-							Else
-								MessageRequester("Error", "File creation failed")
+							Number = GetGadgetState(*System\Gadget[#GD_TreeProject])
+							If Number > 0
+								*Node = *Project\Files.GetNode(Number)
+								If *Node
+									If  *Node\Type = #Node_Directory
+										*Directory = *Node
+										If CopyFile(Path, *Directory\Name + GetFilePart(Path))
+											*Node.AddChild(File_LoadFile(Path))
+											RefreshTreeProject(*System)
+										EndIf
+									EndIf
+								EndIf
 							EndIf
 						EndIf
 						;}
 					Case #AddEmptyFile
 						;{
-						*Directory = Project_GetFile(*Project, GetGadgetState(*System\IHM\Gadget[#GD_TreeProject]))
 						Path = InputRequester("Add a file", "Write the file name", "")
 						If Path
-							Path = Project_GetFilePath(*Project, GetGadgetState(*System\IHM\Gadget[#GD_TreeProject])) +  Path
-							If GetExtensionPart(Path) <> "pb" Or GetExtensionPart(Path) <> "pbi"
-								Path + ".pb"
-							EndIf
-							If CreateFile(0, Path)
-								CloseFile(0)
-								Directory_AddFile(*Directory, File_LoadFile(Path))
-								IHM_SetCurrentProjectTree(*System\IHM,  #GD_ProjectFile)
-							Else
-								MessageRequester("Error", "File creation failed")
+							Number = GetGadgetState(*System\Gadget[#GD_TreeProject])
+							If Number > 0
+								*Node = *Project\Files.GetNode(Number)
+								If *Node
+									If  *Node\Type = #Node_Directory
+										*Directory = *Node
+										Path = *Directory\Name +  Path
+										If Not GetExtensionPart(Path) = "pb" Or Not GetExtensionPart(Path) = "pbi"
+											Path + ".pb"
+										EndIf
+										If CreateFile(0, Path)
+											CloseFile(0)
+											*Node.AddChild(File_LoadFile(Path))
+											RefreshTreeProject(*System)
+										EndIf
+									EndIf
+								EndIf
 							EndIf
 						EndIf
 						;}
@@ -144,7 +199,7 @@ Repeat
 						;}
 					Case #CompilerOptions
 						;{
-						ShowWindow(*System\IHM, #WIN_OptionCompilation)
+						ShowWindow(*System, #WIN_OptionCompilation)
 						;}
 					Case #SwitchStructure
 						;{
@@ -159,32 +214,33 @@ Repeat
 								EndIf
 						EndSelect
 						*system\Prefs.SavePreference()
-						CurrentPos = SCI_GetPosition(GetCurrentScintillaGadget(*System))
-						SetStatusBarText(*System\IHM, 0, "Ligne: " + Str(SCI_LineFromPosition(GetCurrentScintillaGadget(*System), CurrentPos)) +  " Colone: " + Str(CurrentPos) + " Mode: " + *system\Prefs.GetPreference("GENERAL", "structure"))
+						*SCI = *System.GetCurrentScintillaGadget()
+						CurrentPos = *SCI .GetPosition()
+						SetStatusBarText(*System, 0, "Ligne: " + Str(*SCI.LineFromPosition(CurrentPos)) +  " Colone: " + Str(CurrentPos) + " Mode: " + *system\Prefs.GetPreference("GENERAL", "structure"))
 						;}					
 					Case #Option
-						ShowWindow(*System\IHM, #WIN_Option)
+						ShowWindow(*System, #WIN_Option)
 					Case #AutoIndent
-						AutoIdent(GetCurrentScintillaGadget(*System))
+						AutoIdent(*System.GetCurrentScintillaGadget())
 					Case #NewProject
-						ShowWindow(*System\IHM, #WIN_NewProject)
+						ShowWindow(*System, #WIN_NewProject)
 					Case #new
 						*System.AddPanel()
 					Case #open
-						LoadFile(*System\IHM)
+						LoadFile(*System)
 					Case #save
-						SaveCurrentPanel(*System)
+						*System.SaveCurrentPanel()
 					Case #quit
-						SystemEnd(*System)
+						*System.SystemEnd()
 					Case #undo
-						*Ptr = GetCurrentScintillaGadget(*System)
-						If SCI_CanUndo(*Ptr)
-							SCI_Undo(*Ptr)
+						*SCI = *System.GetCurrentScintillaGadget()
+						If *SCI.CanUndo()
+							*SCI.Undo()
 						EndIf
 					Case #redo
-						*Ptr = GetCurrentScintillaGadget(*System)
-						If SCI_CanRedo(*Ptr)
-							SCI_Redo(*Ptr)
+						*SCI = *System.GetCurrentScintillaGadget()
+						If *SCI.CanRedo()
+							*SCI.Redo()
 						EndIf
 					Case #cut
 					Case #copy
@@ -192,8 +248,23 @@ Repeat
 					Case #SlctAll
 					Case #search
 						;{
-						ShowWindow(*System\IHM, #WIN_Search)
+						ShowWindow(*System, #WIN_Search)
 						;}
+					Case #BuildSourceCurrentFile
+						Path = SaveFileRequester("Save source to ?", "", #ChronosSourceFiltre, 1)
+						If Path
+							*panel = GetCurrentPanel(*System)
+							If Not *Panel\File\Path
+								File = TempDir + "temp.pb"
+								*Panel.SaveFileTo(File)
+							Else
+								File = *Panel\File\Path
+								*System.SaveCurrentPanel()
+							EndIf
+							If *System.PrecompileFile(File,  Path)
+								*System.AddPanel(Path)
+							EndIf
+						EndIf
 					Case #compiler, #CompilerProject
 						;{
 						Run = #True
@@ -202,72 +273,113 @@ Repeat
 							*panel = GetCurrentPanel(*System)
 							If Not *Panel\File\Path
 								File = TempDir + "temp.pb"
+								*Panel.SaveFileTo(File)
 							Else
 								File = *Panel\File\Path
+								*System.SaveCurrentPanel()
 							EndIf
 							Precompilation = *System.precompilerIsEnable()
-							Parameter = MakeCompilerParamList(*System)
+							Parameter = *System.MakeCompilerParamList()
 							Destination = TempDir+"main.pb"
+							WorkingDirectory = GetPathPart(File)
 						Else
-							File = GetSourcesPath(*Project) + "main.pb"
-							Destination = GetGeneratedSourcesPath(*Project) + "main.pb"
-							Parameter = GetCompilerParamList(*Project)	
-							Precompilation = *Project.PrecompilerIsEnable()
+							If *Project
+								*System.SaveProjectFiles()
+								File = *Project.GetSourcesPath() + "main.pb"
+								Destination = *Project.GetGeneratedSourcesPath() + "main.pb"
+								Parameter = *Project.GetCompilerParamList()	
+								Precompilation = *Project.PrecompilerIsEnable()
+								WorkingDirectory = *Project.GetMediasPath()
+							Else
+								Run = #False
+							EndIf
 						EndIf
 						If Precompilation
 							Run = *System.PrecompileFile(File,  Destination)
 							File = Destination
 						EndIf
-						Parameter + " " + #CompilerFlagDebugger
 						If Run
-							*System.RunProgram(File, Parameter, Precompilation)
-							EndIf					
-							;}
-						Case #close
-							;{
-							*System.RemoveCurrentPanel()
-							;}
-						Case #closeAll
-						Case #TabOnly
-							SCI_AddText(GetCurrentScintillaGadget(*System), Chr(9))
-					EndSelect
-					;}
-				Case #PB_Event_SysTray
-				Case #PB_Event_CloseWindow
-					;{
-					Select EventWindow()
-						Case GetWindow(*System\IHM, #WIN_OptionCompilation)
-							IHM_HideWindow(*System\IHM, #WIN_OptionCompilation)
-						Case GetWindow(*System\IHM, #WIN_Main)
-							SystemEnd(*System)
-						Case GetWindow(*System\IHM, #WIN_NewProject)
-							IHM_HideWindow(*System\IHM, #WIN_NewProject)
-							DisableWindow(*System\IHM\Window[#WIN_Main] , 0)
-						Case GetWindow(*System\IHM, #WIN_Search)
-							IHM_HideWindow(*System\IHM, #WIN_Search)
-					EndSelect
-					;}
-				Case #PB_Event_Repaint
-				Case #PB_Event_MoveWindow
-				Case #PB_Event_MinimizeWindow
-					ResizeWindows(*System\IHM, 0)
-				Case #PB_Event_MaximizeWindow
-					ResizeWindows(*System\IHM, 0)
-				Case #PB_Event_RestoreWindow
-				Case #PB_Event_SizeWindow
-					ResizeWindows(*System\IHM, 0)
-				Case #PB_Event_ActivateWindow
-				Case #PB_Event_WindowDrop	
-				Case #PB_Event_GadgetDrop
-					;{
-					Select EventGadget()
-						Case GetGadget(*System\IHM, #GD_MainPanel)
-							*System.AddPanel(EventDropFiles())
-					EndSelect
-					;}
-			EndSelect
-			Event = WindowEvent()
-		Wend
-		Delay(1)
-	ForEver
-		
+							*System.RunProgram(File, Parameter, Precompilation, WorkingDirectory)
+						EndIf
+						;}
+					Case #close
+						;{
+						*System.RemoveCurrentPanel()
+						;}
+					Case #closeAll
+					Case #DebugerOn
+						*System.SwitchDebuggerUse()
+					case #UnCommentText
+						*SCI = *System.GetCurrentScintillaGadget()
+						If Not *SCI.GetSelectionStart() = *SCI.GetSelectionEnd()
+							LineStart = *SCI.LineFromPosition(*SCI.GetSelectionStart())
+							LineEnd = *SCI.LineFromPosition(*SCI.GetSelectionEnd())
+							For n = LineStart To LineEnd
+								Indent = *SCI.GetLineIdentation(n)
+								*SCI.SetLineIdentation(n, 0)
+								If *SCI.GetCharAt(*SCI.PositionFromLine(n)) = ';'
+									*SCI.RemoveCharAt(*SCI.PositionFromLine(n))
+								EndIf
+								*SCI.SetLineIdentation(n, *SCI.GetLineIdentation(n) + Indent)
+							Next n
+						Endif
+					case #CommentText
+						*SCI = *System.GetCurrentScintillaGadget()
+						If Not *SCI.GetSelectionStart() = *SCI.GetSelectionEnd()
+							LineStart = *SCI.LineFromPosition(*SCI.GetSelectionStart())
+							LineEnd = *SCI.LineFromPosition(*SCI.GetSelectionEnd())
+							For n = LineStart To LineEnd
+								*SCI.InsertText(*SCI.PositionFromLine(n), ";")
+							Next n
+						Endif
+					Case #TabOnly
+						*SCI = *System.GetCurrentScintillaGadget()
+						If *SCI.GetSelectionStart() = *SCI.GetSelectionEnd()
+							*SCI.AddText(Chr(9))
+						Else
+							LineStart = *SCI.LineFromPosition(*SCI.GetSelectionStart())
+							LineEnd = *SCI.LineFromPosition(*SCI.GetSelectionEnd())
+							For n = LineStart To LineEnd
+								*SCI.SetLineIdentation(n, *SCI.GetLineIdentation(n) + *SCI.GetTabWidth())
+							Next n
+						Endif
+				EndSelect
+				;}
+			Case #PB_Event_SysTray
+			Case #PB_Event_CloseWindow
+				;{
+				Select EventWindow()
+					Case GetWindow(*System, #WIN_OptionCompilation)
+						IHM_HideWindow(*System, #WIN_OptionCompilation)
+					Case GetWindow(*System, #WIN_Main)
+						*System.SystemEnd()
+					Case GetWindow(*System, #WIN_NewProject)
+						IHM_HideWindow(*System, #WIN_NewProject)
+						DisableWindow(*System\Window[#WIN_Main] , 0)
+					Case GetWindow(*System, #WIN_Search)
+						IHM_HideWindow(*System, #WIN_Search)
+					Case GetWindow(*System,#WIN_TemplateMaker)
+						IHM_HideWindow(*System, #WIN_TemplateMaker)
+				EndSelect
+				;}
+			Case #PB_Event_Repaint
+			Case #PB_Event_MoveWindow
+			Case #PB_Event_MinimizeWindow
+				ResizeWindows(*System, 0)
+			Case #PB_Event_MaximizeWindow
+				ResizeWindows(*System, 0)
+			Case #PB_Event_RestoreWindow
+			Case #PB_Event_SizeWindow
+				ResizeWindows(*System, 0)
+			Case #PB_Event_ActivateWindow
+			Case #PB_Event_WindowDrop	
+			Case #PB_Event_GadgetDrop
+				;{
+				*System.AddPanel(EventDropFiles())
+				;}
+		EndSelect
+		Event = WindowEvent()
+	Wend
+	Delay(1)
+ForEver
+
