@@ -21,7 +21,7 @@ CompilerEndCondition
 
 CompilerCondition #PB_Compiler_OS = #PB_OS_Linux
 	#Chronos_exe = #MainName
-	#PrefixeFile = "linux"
+	#PrefixeFile = "Linux"
 	#PB_CompilerName = "pbcompiler"
 	#Extension = ".out"
 	#PB_Debugger = "pbdebugger"

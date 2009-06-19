@@ -155,11 +155,7 @@
 			Default
 				retour = "x86 - "
 		EndSelect
-		CompilerIf #PB_Compiler_OS = #PB_OS_Linux
-			retour + "linux"
-		CompilerElse
-			retour + "Windows"
-		CompilerEndIf
+		retour + #PrefixeFile ;Windows or Linux or MacOS
 		ProcedureReturn GetPathPart(*this\Path) + "Binaries" + "/" + retour + "/" + *this\Name + #Extension
 	EndProcedure
 	
@@ -338,4 +334,4 @@ EndProcedure
 
 Procedure FreeProject(*this.Project)
 	;FreeMemory(*this)
-EndProcedure
+	EndProcedure	
