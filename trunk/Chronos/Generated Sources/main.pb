@@ -426,6 +426,10 @@ Structure Array
 	number.i
 EndStructure
 
+Structure SharedArray Extends Array
+	Mutex.i
+EndStructure
+
 Structure CharacterRange
 	cpMin.l
 	cpMax.l
@@ -458,6 +462,10 @@ EndStructure
 Structure Node
 	*Child.Array
 	Type.l
+EndStructure
+
+Structure SharedNode Extends Node
+	Mutex.i
 EndStructure
 
 Structure Ressource
@@ -723,10 +731,12 @@ Declare.i Array_CountElement(*this.Array)
 Declare.i Array_SetElement(*this.Array,number.i,*Element.i)
 Declare.i Array_AddElement(*this.Array,*Element.i)
 Declare.i Array_FreeElement(*this.Array,number.i)
+Declare.i Array_Remove(*this.Array,*Element.i)
 Declare.i Array_GetElement(*this.Array,number.i)
 Declare.i Array_RemoveAll(*this.Array)
 Declare.i Array_Free(*this.Array)
 Declare.i New_Array()
+Declare.i New_SharedArray()
 Declare.i Scintilla_StyleSetFont(*this.Scintilla,Style.i,Text.s)
 Declare.i Scintilla_InsertText(*this.Scintilla,Position.l,Text.s)
 Declare.i Scintilla_GetLineStartPosition(*this.Scintilla,line.i)
@@ -759,6 +769,7 @@ Declare.i Node_GetChildNode(*this.Node,n.l)
 Declare.i Node_GetNode(*this.Node,n.l)
 Declare.i Node_removeNode(*this.Node,n.l)
 Declare.i New_Node()
+Declare.i New_SharedNode()
 Declare.i New_Ressource(*Res.i,File.s,ID.l)
 Declare.i Ressource_GetRessource(*this.Ressource)
 Declare.i Ressource_Free(*this.Ressource)
@@ -1027,6 +1038,26 @@ Procedure.i Array_FreeElement(*this.Array,number.i)
 	*this\ptr=ReAllocateMemory(*this\ptr,*this\number*SizeOf(integer))
 	EndIf
 EndProcedure
+Procedure.i Array_Remove(*this.Array,*Element.i)
+Protected n.i
+	For n=1 To *this\number
+	If PeekI(*this\ptr+(n-1)*SizeOf(integer))=*Element
+	If *this\number=1
+	*this\number=0
+	Else
+	If n<*this\number
+	CopyMemory(*this\ptr+SizeOf(integer)*n,*this\ptr+SizeOf(integer)*(n-1),SizeOf(integer)*(*this\number-n))
+	Else
+	ProcedureReturn #False
+	EndIf
+	*this\number-1
+	*this\ptr=ReAllocateMemory(*this\ptr,*this\number*SizeOf(integer))
+	EndIf
+	ProcedureReturn #True
+	EndIf
+	Next
+	ProcedureReturn #False
+EndProcedure
 Procedure.i Array_GetElement(*this.Array,number.i)
 	If number<=*this\number
 	ProcedureReturn PeekI(*this\ptr+(number-1)*SizeOf(integer))
@@ -1047,6 +1078,14 @@ Protected *this.Array
 		*this = AllocateMemory(SizeOf(Array))
 		*this\ptr=AllocateMemory(1)
 		*this\number=0
+		ProcedureReturn *this
+EndProcedure
+Procedure.i New_SharedArray()
+Protected *this.SharedArray
+	*this=allocatememory(sizeof(SharedArray))
+		*this\Mutex=CreateMutex()
+	*this\ptr=AllocateMemory(1)
+	*this\number.i=0
 		ProcedureReturn *this
 EndProcedure
 Procedure.i Scintilla_StyleSetFont(*this.Scintilla,Style.i,Text.s)
@@ -1335,6 +1374,13 @@ Procedure.i New_Node()
 Protected *this.Node
 		*this = AllocateMemory(SizeOf(Node))
 		*this\Child=New_Array()
+		ProcedureReturn *this
+EndProcedure
+Procedure.i New_SharedNode()
+Protected *this.SharedNode
+	*this=allocatememory(sizeof(SharedNode))
+		*this\Mutex=CreateMutex()
+	*this\Child=New_Array()
 		ProcedureReturn *this
 EndProcedure
 Procedure.i New_Ressource(*Res.i,File.s,ID.l)
@@ -4739,7 +4785,7 @@ Protected Text.s
 	EndIf
 	Next i
 	If Not Number=""
-	If i<=Len(Text)And Mid(Text,j,1)="$"
+	If i<=Len(Text)And Mid(Text,i,1)="$"
 	Found=#False
 	Else
 	Found=#True
